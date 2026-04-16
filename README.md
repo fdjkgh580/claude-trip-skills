@@ -35,62 +35,32 @@
 
 ### 你需要先有
 
-- **Claude Code** — Anthropic 的 AI 工具。[Mac / Windows 桌面版](https://claude.ai/claude-code) 或 [Web 版](https://claude.ai/code) 都可以
-- Claude **Pro** 或 **Max** 訂閱（需要付費才能使用 Claude Code）
+- **Claude Code** — Anthropic 的 AI 工具。[桌面版（Mac / Windows）](https://claude.ai/claude-code)、[Web 版](https://claude.ai/code)、或終端機 CLI 都可以
+- Claude **Pro** 或 **Max** 訂閱
 
-### 方法一：桌面版 / Web 版使用者（推薦）
+### 方法一：直接叫 Claude 幫你裝（最簡單，推薦）
 
-1. 打開 Claude Code（桌面 App 或網頁版都行）
-2. 在對話框輸入以下指令，按 Enter：
+打開 Claude Code，直接跟它說：
 
-```
-/plugin marketplace add fdjkgh580/claude-trip-skills
-```
+> 幫我從 https://github.com/fdjkgh580/claude-trip-skills 安裝旅行規劃 skills 到 ~/.claude/skills/
 
-3. 接著輸入：
+Claude 會自己下載並安裝好。裝完輸入 `/trip-plan` 就可以開始規劃旅行了。
 
-```
-/plugin install trip-plan@fdjkgh580-claude-trip-skills
-/plugin install trip-research@fdjkgh580-claude-trip-skills
-/plugin install trip-go@fdjkgh580-claude-trip-skills
-/plugin install trip-review@fdjkgh580-claude-trip-skills
-/plugin install trip-pack@fdjkgh580-claude-trip-skills
-```
+### 方法二：自己貼指令安裝
 
-4. 完成！輸入 `/trip-plan` 就可以開始規劃旅行了
-
-> 也可以輸入 `/plugin` 打開 Plugin Manager，在 **Discover** 分頁瀏覽和一鍵安裝。
-
-### 方法二：終端機使用者
-
-如果你習慣用終端機操作 Claude Code CLI：
+如果你比較喜歡自己操作，打開 Claude Code 貼上這段：
 
 ```bash
-# 加入 marketplace
-claude plugin marketplace add fdjkgh580/claude-trip-skills
-
-# 安裝所有 skills
-claude plugin install trip-plan@fdjkgh580-claude-trip-skills
-claude plugin install trip-research@fdjkgh580-claude-trip-skills
-claude plugin install trip-go@fdjkgh580-claude-trip-skills
-claude plugin install trip-review@fdjkgh580-claude-trip-skills
-claude plugin install trip-pack@fdjkgh580-claude-trip-skills
+git clone https://github.com/fdjkgh580/claude-trip-skills.git /tmp/claude-trip-skills && cp -r /tmp/claude-trip-skills/skills/trip-* ~/.claude/skills/ && rm -rf /tmp/claude-trip-skills
 ```
 
-### 方法三：手動複製（進階）
-
-不想用 Plugin 系統的話，直接複製檔案也行：
-
-```bash
-git clone https://github.com/fdjkgh580/claude-trip-skills.git
-cp -r claude-trip-skills/skills/trip-* ~/.claude/skills/
-```
+一行搞定。裝完輸入 `/trip-plan` 開始。
 
 ### （選配）機票搜尋功能
 
-想讓 Claude 幫你搜尋機票？在 Claude Code 裡輸入：
+想讓 Claude 幫你搜尋機票？在 Claude Code 裡貼上：
 
-```
+```bash
 claude mcp add kiwi-com --transport http https://mcp.kiwi.com
 ```
 
