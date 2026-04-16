@@ -38,23 +38,29 @@
 - **Claude Code** — Anthropic 的 AI 工具。[桌面版（Mac / Windows）](https://claude.ai/claude-code)、[Web 版](https://claude.ai/code)、或終端機 CLI 都可以
 - Claude **Pro** 或 **Max** 訂閱
 
-### 方法一：直接叫 Claude 幫你裝（最簡單，推薦）
+### 方法一：在 Claude Code 裡貼一句話（推薦，不需要任何技術背景）
 
-打開 Claude Code，直接跟它說：
+打開 Claude Code（桌面 App、Web 版、或終端機都行），把下面這句話貼到對話框，按送出：
 
 > 幫我從 https://github.com/fdjkgh580/claude-trip-skills 安裝旅行規劃 skills 到 ~/.claude/skills/
 
-Claude 會自己下載並安裝好。裝完輸入 `/trip-plan` 就可以開始規劃旅行了。
+Claude 會自己下載、安裝、搞定一切。看到它說安裝完成後，輸入 `/trip-plan` 就可以開始規劃旅行了。
 
-### 方法二：自己貼指令安裝
+### 方法二：手動下載再匯入（不想讓 Claude 碰你的檔案系統時）
 
-如果你比較喜歡自己操作，打開 Claude Code 貼上這段：
+1. 到 [GitHub 頁面](https://github.com/fdjkgh580/claude-trip-skills)，點綠色的 **Code** 按鈕 → **Download ZIP**
+2. 解壓縮下載的 ZIP 檔
+3. 打開 Claude Code，跟它說：
+
+> 我下載了旅行規劃 skills，解壓在「下載」資料夾裡的 claude-trip-skills-main，幫我安裝到 ~/.claude/skills/
+
+Claude 會幫你把檔案放到正確的位置。
+
+### 方法三：一行指令安裝（工程師適用）
 
 ```bash
 git clone https://github.com/fdjkgh580/claude-trip-skills.git /tmp/claude-trip-skills && cp -r /tmp/claude-trip-skills/skills/trip-* ~/.claude/skills/ && rm -rf /tmp/claude-trip-skills
 ```
-
-一行搞定。裝完輸入 `/trip-plan` 開始。
 
 ### （選配）機票搜尋功能
 
