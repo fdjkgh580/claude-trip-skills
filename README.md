@@ -35,45 +35,66 @@
 
 ### 你需要先有
 
-- **Claude Code** — Anthropic 的 AI 命令列工具。如果還沒裝，到 [claude.ai/claude-code](https://claude.ai/claude-code) 下載
-- 選配：**Kiwi.com MCP** — 幫你即時搜尋機票（安裝方式見下方）
+- **Claude Code** — Anthropic 的 AI 工具。[Mac / Windows 桌面版](https://claude.ai/claude-code) 或 [Web 版](https://claude.ai/code) 都可以
+- Claude **Pro** 或 **Max** 訂閱（需要付費才能使用 Claude Code）
 
-### 方法一：用 Plugin 安裝（推薦，最簡單）
+### 方法一：桌面版 / Web 版使用者（推薦）
 
-打開 Claude Code，輸入：
-
-```
-/plugin install claude-trip-skills@fdjkgh580-claude-trip-skills
-```
-
-或是先加入 marketplace 再安裝：
+1. 打開 Claude Code（桌面 App 或網頁版都行）
+2. 在對話框輸入以下指令，按 Enter：
 
 ```
 /plugin marketplace add fdjkgh580/claude-trip-skills
 ```
 
-安裝後輸入 `/trip-plan` 就可以開始規劃旅行了。
+3. 接著輸入：
 
-### 方法二：手動安裝
+```
+/plugin install trip-plan@fdjkgh580-claude-trip-skills
+/plugin install trip-research@fdjkgh580-claude-trip-skills
+/plugin install trip-go@fdjkgh580-claude-trip-skills
+/plugin install trip-review@fdjkgh580-claude-trip-skills
+/plugin install trip-pack@fdjkgh580-claude-trip-skills
+```
 
-如果你偏好手動，也可以下載後複製：
+4. 完成！輸入 `/trip-plan` 就可以開始規劃旅行了
+
+> 也可以輸入 `/plugin` 打開 Plugin Manager，在 **Discover** 分頁瀏覽和一鍵安裝。
+
+### 方法二：終端機使用者
+
+如果你習慣用終端機操作 Claude Code CLI：
+
+```bash
+# 加入 marketplace
+claude plugin marketplace add fdjkgh580/claude-trip-skills
+
+# 安裝所有 skills
+claude plugin install trip-plan@fdjkgh580-claude-trip-skills
+claude plugin install trip-research@fdjkgh580-claude-trip-skills
+claude plugin install trip-go@fdjkgh580-claude-trip-skills
+claude plugin install trip-review@fdjkgh580-claude-trip-skills
+claude plugin install trip-pack@fdjkgh580-claude-trip-skills
+```
+
+### 方法三：手動複製（進階）
+
+不想用 Plugin 系統的話，直接複製檔案也行：
 
 ```bash
 git clone https://github.com/fdjkgh580/claude-trip-skills.git
 cp -r claude-trip-skills/skills/trip-* ~/.claude/skills/
 ```
 
-完成！打開 Claude Code，輸入 `/trip-plan` 就可以開始了。
+### （選配）機票搜尋功能
 
-### （選配）安裝機票搜尋功能
+想讓 Claude 幫你搜尋機票？在 Claude Code 裡輸入：
 
-如果你希望 Claude 幫你搜尋機票，可以加裝 Kiwi.com 整合：
-
-```bash
+```
 claude mcp add kiwi-com --transport http https://mcp.kiwi.com
 ```
 
-沒裝也沒關係，Claude 會改用網路搜尋給你參考價格。
+沒裝也沒關係，Claude 會改用網路搜尋給你參考價格和訂票平台。
 
 ## 特色功能
 
