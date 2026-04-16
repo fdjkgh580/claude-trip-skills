@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # /trip-research — 深度研究目的地
 
-全程使用**繁體中文**回覆。根據使用者的旅行者畫像和目的地，派出研究 agent 進行深度調查。
+使用與使用者相同的語言回覆（預設繁體中文）。根據使用者的旅行者畫像和目的地，派出研究 agent 進行深度調查。
 
 ## 前置檢查
 
@@ -127,7 +127,7 @@ disable-model-invocation: true
 2. 從畫像中提取的相關偏好（不要把整個畫像丟進去，只取相關部分）
 3. 明確的研究範圍和產出格式
 4. 要求附上 Google Maps 連結（格式：`https://www.google.com/maps/search/{名稱+城市}`）
-5. 要求以繁體中文撰寫報告
+5. 要求以使用者的語言撰寫報告（從對話語言判斷）
 6. 使用 `subagent_type: "general-purpose"` 確保有網路搜尋能力
 7. 要求 agent 若搜尋不到可靠資訊，在報告中標記「⚠️ 資料不足，建議出發前自行確認」，不得捏造資訊
 
