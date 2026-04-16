@@ -1,0 +1,13 @@
+{
+  "name": "claude-trip-skills",
+  "version": "1.0.0",
+  "description": "旅行規劃 Skills 套件 — 從規劃到旅途即時支援",
+  "author": {
+    "name": "Cary Chang",
+    "url": "https://github.com/fdjkgh580"
+  },
+  "repository": "https://github.com/fdjkgh580/claude-trip-skills",
+  "license": "MIT",
+  "keywords": ["travel", "trip", "planner", "itinerary", "expense-tracking"],
+  "skills": "./skills/"
+}

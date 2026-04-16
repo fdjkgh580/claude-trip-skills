@@ -38,21 +38,32 @@
 - **Claude Code** — Anthropic 的 AI 命令列工具。如果還沒裝，到 [claude.ai/claude-code](https://claude.ai/claude-code) 下載
 - 選配：**Kiwi.com MCP** — 幫你即時搜尋機票（安裝方式見下方）
 
-### 安裝步驟
+### 方法一：用 Plugin 安裝（推薦，最簡單）
 
-1. 下載這個技能包：
+打開 Claude Code，輸入：
+
+```
+/plugin install claude-trip-skills@fdjkgh580-claude-trip-skills
+```
+
+或是先加入 marketplace 再安裝：
+
+```
+/plugin marketplace add fdjkgh580/claude-trip-skills
+```
+
+安裝後輸入 `/trip-plan` 就可以開始規劃旅行了。
+
+### 方法二：手動安裝
+
+如果你偏好手動，也可以下載後複製：
 
 ```bash
 git clone https://github.com/fdjkgh580/claude-trip-skills.git
+cp -r claude-trip-skills/skills/trip-* ~/.claude/skills/
 ```
 
-2. 複製到 Claude Code 的技能目錄：
-
-```bash
-cp -r claude-trip-skills/trip-* ~/.claude/skills/
-```
-
-3. 完成！打開 Claude Code，輸入 `/trip-plan` 就可以開始規劃旅行了。
+完成！打開 Claude Code，輸入 `/trip-plan` 就可以開始了。
 
 ### （選配）安裝機票搜尋功能
 
