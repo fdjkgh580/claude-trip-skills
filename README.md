@@ -4,7 +4,7 @@
 
 ## 這是什麼？
 
-這是一套給 [Claude Code](https://claude.ai/claude-code)（Anthropic 的 AI 命令列工具）使用的旅行規劃技能包。安裝後，你只要打幾個指令，Claude 就會一步步幫你規劃整趟旅行。
+這是一套給 [Claude Code](https://code.claude.com/)（Anthropic 的 AI 開發工具）使用的旅行規劃技能包。安裝後，你只要打幾個指令，Claude 就會一步步幫你規劃整趟旅行。
 
 **不需要寫程式，不需要懂技術。** 整個過程就像在跟一個很懂旅行的朋友聊天。
 
@@ -35,7 +35,10 @@
 
 ### 你需要先有
 
-- **Claude Code** — Anthropic 的 AI 工具。[桌面版（Mac / Windows）](https://claude.ai/claude-code)、[Web 版](https://claude.ai/code)、或終端機 CLI 都可以
+- **Claude Code** — Anthropic 的 AI 工具。有三種使用方式：
+  - **桌面 App**：下載 [Claude 桌面版](https://claude.ai/download)，打開後切到 **Cowork** 或 **Code** 分頁就是 Claude Code
+  - **Web 版**：到 [claude.ai](https://claude.ai) 登入後切到 Cowork / Code 分頁
+  - **終端機 CLI**：`brew install --cask claude-code`（Mac）或到 [安裝指南](https://code.claude.com/docs/en/overview) 看其他系統
 - Claude **Pro** 或 **Max** 訂閱
 
 ### 方法一：在 Claude Code 裡貼一句話（推薦，不需要任何技術背景）
@@ -97,7 +100,7 @@ claude mcp add kiwi-com --transport http https://mcp.kiwi.com
 ## 常見問題
 
 **Q: 我不會用命令列 / 終端機，可以用嗎？**
-A: 可以。Claude Code 有桌面版 App，操作就像聊天視窗。你只需要會打字和點選就好。
+A: 可以。下載 [Claude 桌面 App](https://claude.ai/download)，打開後在 Cowork 或 Code 分頁操作，跟聊天一樣。你只需要會打字和點選就好。
 
 **Q: 需要付費嗎？**
 A: 這個技能包免費。但你需要 Claude Code 的訂閱（Claude Pro 或 Max）才能使用。
