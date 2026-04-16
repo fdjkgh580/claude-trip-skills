@@ -12,7 +12,7 @@ disable-model-invocation: true
 ## 前置檢查
 
 1. 讀取當前目錄的 `CLAUDE.md`，確認目的地、日期、旅行風格等資訊
-2. 讀取 `~/.claude/traveler-profile.md`，取得旅行者畫像
+2. 讀取 `./traveler-profile.md`，取得旅行者畫像
 3. 如果任一檔案不存在，提醒使用者先執行 `/trip-plan`
 
 ## 研究 Agent 策略

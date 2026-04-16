@@ -12,7 +12,7 @@ disable-model-invocation: true
 ## 前置檢查
 
 1. 讀取 `CLAUDE.md` 取得行程概要
-2. 讀取 `~/.claude/traveler-profile.md` 取得旅行者畫像
+2. 讀取 `./traveler-profile.md` 取得旅行者畫像
 3. 讀取 `.claude/reports/index.md` 確認研究報告存在
 4. 讀取所有 agent 報告
 5. 如果研究報告不存在，提醒使用者先執行 `/trip-research`
@@ -210,7 +210,7 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 - 行程表：`.claude/reports/final-itinerary.md`（或 `overview.md` + `day-*.md`）
 - 記帳檔：`.claude/reports/expense-log.md` — 使用者提到花費就更新這個檔案
 - 研究報告：`.claude/reports/` 目錄下的 agent 報告
-- 旅行者畫像：`~/.claude/traveler-profile.md`
+- 旅行者畫像：`./traveler-profile.md`
 ```
 
 ## 完成後

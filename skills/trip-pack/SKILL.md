@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 ## 前置檢查
 
-1. 讀取 `~/.claude/traveler-profile.md` 取得旅行者畫像
+1. 讀取 `./traveler-profile.md` 取得旅行者畫像
 2. 讀取 `CLAUDE.md` 取得行程概要
 3. 根據畫像的輸出格式讀取行程表：
    - 單一檔案模式：讀取 `.claude/reports/final-itinerary.md`

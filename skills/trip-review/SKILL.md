@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 ## 前置檢查
 
-1. 讀取 `~/.claude/traveler-profile.md` 取得旅行者畫像，確認行程輸出格式（若畫像中無「行程輸出格式」欄位，從 CLAUDE.md 的協作設定讀取；兩者皆無則預設單一檔案模式）
+1. 讀取 `./traveler-profile.md` 取得旅行者畫像，確認行程輸出格式（若畫像中無「行程輸出格式」欄位，從 CLAUDE.md 的協作設定讀取；兩者皆無則預設單一檔案模式）
 2. 讀取 `CLAUDE.md` 取得行程概要
 3. 根據輸出格式讀取行程表：
    - 單一檔案模式：讀取 `.claude/reports/final-itinerary.md`
