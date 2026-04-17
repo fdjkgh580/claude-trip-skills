@@ -12,6 +12,32 @@ disable-model-invocation: true
 
 ## 流程
 
+### 0. 確認當前資料夾合適
+
+用 `Bash` 執行 `pwd` 取得當前路徑。
+
+**如果當前路徑是以下其中之一，發出警告**：
+- `$HOME`（使用者家目錄本身）
+- `$HOME/Downloads`、`$HOME/Desktop`、`$HOME/Documents`、`$HOME/Pictures`、`$HOME/Movies`、`$HOME/Music`
+- `/tmp`、`/var/tmp`
+- 路徑包含 `Projects/claude-trip-skills`（這是 skill 的 source repo，不該在這裡建旅行檔案）
+
+警告訊息：
+
+> ⚠️ 你現在在 `{當前路徑}`。在這裡建立旅行檔案會跟其他檔案混在一起，之後不好找。
+>
+> 建議：建一個專屬資料夾（例如 `~/Trips/巴黎-2026春`），在那個資料夾打開 Claude 後再執行 `/trip-plan`。
+
+用 `AskUserQuestion` 問（單選）：
+
+| 選項 | 說明 |
+|------|------|
+| 我先去建專屬資料夾 | 中止這次規劃，請使用者建好資料夾、在那邊重新打開 Claude 再來 |
+| 沒關係，就用這裡 | 繼續流程 |
+
+如果選「中止」，告訴使用者怎麼建資料夾後就停止本次規劃。
+如果選「繼續」或路徑沒問題，往下走。
+
 ### 1. 檢查旅行者畫像
 
 用 Read 工具讀取 `./traveler-profile.md`：
