@@ -30,7 +30,7 @@ disable-model-invocation: true
 
 ### 2. 讀取行程概要（如果有 CLAUDE.md）
 
-如果 A 存在，從 CLAUDE.md 讀取「行程概要」區塊（目的地、日期、天數、旅伴）。
+如果 A 存在，從 CLAUDE.md 讀取「狀態」與「行程概要」區塊（目的地、日期、天數、旅伴）。
 
 ### 3. 判定當前進度與下一步
 
@@ -38,6 +38,7 @@ disable-model-invocation: true
 
 | 條件 | 進度 | 下一步指引 |
 |------|------|-----------|
+| A 存在且「狀態」為 `aborted` | 已放棄 | 告訴使用者「這份規劃先前已放棄。若要重新開始請打 `/trip-plan`；若要續用就改 `CLAUDE.md` 的狀態為 `active`」 |
 | A 不存在 | 還沒開始規劃 | 打 `/trip-plan` 開始規劃這趟旅行 |
 | A 存在、B 不存在 | 規劃中斷 | 打 `/trip-plan` 接續完成規劃（畫像還沒存） |
 | A、B 存在，C 不存在 | 已規劃，未研究 | 打 `/trip-research` 研究目的地 |
