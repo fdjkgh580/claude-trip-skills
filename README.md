@@ -65,6 +65,18 @@ Claude 會幫你把檔案放到正確的位置。
 git clone https://github.com/fdjkgh580/claude-trip-skills.git /tmp/claude-trip-skills && cp -r /tmp/claude-trip-skills/skills/trip-* ~/.claude/skills/ && rm -rf /tmp/claude-trip-skills
 ```
 
+### 方法四：Clone + symlink（想自己改 skill 內容時用）
+
+把 repo clone 到本機，跑 `install.sh` 會在 `~/.claude/skills/` 建立 symlink 連回 repo。之後你改 repo 裡的檔案就直接生效，不用兩邊同步。
+
+```bash
+git clone https://github.com/fdjkgh580/claude-trip-skills.git ~/Projects/claude-trip-skills
+cd ~/Projects/claude-trip-skills
+./scripts/install.sh
+```
+
+換電腦時重複上面 3 行就可以還原。
+
 ### （選配）機票搜尋功能
 
 想讓 Claude 幫你搜尋機票？在 Claude Code 裡貼上：
@@ -79,7 +91,7 @@ claude mcp add kiwi-com --transport http https://mcp.kiwi.com
 
 ### 懂你的旅行風格
 
-第一次使用會問你幾個問題（用選擇題，不用打字），之後記住你的偏好。下次規劃新旅行不用重填。
+每次新旅行會問你幾個問題（用選擇題，不用打字），偏好存在這趟旅行的資料夾裡。中途離開沒關係，下次打開資料夾就能接續規劃。每趟旅行各自獨立，幫家人或朋友規劃時不會互相干擾。
 
 ### 攝影、美食、戶外⋯⋯不同興趣，不同行程
 
