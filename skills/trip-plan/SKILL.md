@@ -242,7 +242,7 @@ active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 
 - 旅行者畫像：`./traveler-profile.md`
 - 研究報告：`.claude/reports/` 目錄
 - 最終行程：`.claude/reports/final-itinerary.md`（尚未生成）
-- 行程網頁版：`.claude/reports/final-itinerary.html`（尚未生成）
+- 行程網頁版：按需求產出（跟 Claude 說「幫我出 HTML」）
 - 記帳檔：`.claude/reports/expense-log.md`（尚未生成）
 - 行前清單：`.claude/reports/checklist.md`（尚未生成）
 - 紙本緊急卡：`.claude/reports/emergency-card.md` / `.html`（尚未生成）

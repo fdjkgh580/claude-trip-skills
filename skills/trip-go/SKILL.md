@@ -39,11 +39,11 @@ disable-model-invocation: true
 
 ## 輸出模式
 
-根據畫像中的「行程輸出格式」決定，**每種模式同時產 Markdown 和 HTML**（HTML 方便手機閱讀、傳給家人朋友看）：
+根據畫像中的「行程輸出格式」決定。**預設只產 Markdown**（行程還會反覆調整，HTML 同步產會雙倍工作量且容易脫節）。
 
 ### 單一檔案模式（預設）
 
-所有天數寫入 `.claude/reports/final-itinerary.md`，**同時產出** `.claude/reports/final-itinerary.html`。
+所有天數寫入 `.claude/reports/final-itinerary.md`。
 
 ### 分日拆檔模式
 
@@ -51,13 +51,10 @@ disable-model-invocation: true
 ```
 .claude/reports/
 ├── overview.md          # 行程總覽（日期+城市+主題+預算摘要）
-├── overview.html        # 同上，HTML 版
 ├── day-1.md             # 第 1 天完整行程
-├── day-1.html
-├── day-2.md
-├── day-2.html
+├── day-2.md             # 第 2 天完整行程
 ├── ...
-└── day-N.md / .html
+└── day-N.md
 ```
 
 N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/2 出發、4/10 回到家的行程，就是 day-1.md（4/2）到 day-9.md（4/10）。
@@ -66,7 +63,20 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 如果畫像中沒有這個設定，預設用單一檔案模式。
 
-### HTML 產出規範
+### HTML 只在使用者要求時才產
+
+**不要**在 `/trip-go` 自動產 HTML。行程通常會反覆調整，同步維護兩種格式浪費時間、而且很容易不同步。
+
+完成後告訴使用者：
+
+> 行程已出，後續隨時可以調整。如果之後想要產 HTML 版（傳給家人朋友看、手機方便讀、列印 PDF），跟我說「幫我出 HTML」就好。
+
+**當使用者說「出 HTML」「產網頁版」「給我 HTML 給家人看」這類訊號時**，用下方規範把當前 Markdown 轉 HTML：
+
+- 單一檔案 → `.claude/reports/final-itinerary.html`
+- 分日拆檔 → `.claude/reports/overview.html` + `day-N.html`（每天一份）
+
+### HTML 產出規範（使用者要求時才用）
 
 - 手機與桌面瀏覽器都要好讀；不加列印專用樣式（使用者自己會按 Cmd+P / Ctrl+P 列印）
 - 風格要求：乾淨、可讀、不花俏，類似 GitHub Markdown 渲染的簡潔感
@@ -76,6 +86,7 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 - 支援深色模式用 `@media (prefers-color-scheme: dark)` 稍加調整
 - 不需引入任何 JavaScript、框架，純 HTML + CSS
 - 所有資料都從 Markdown 轉換而來、內容要一致（同樣的欄位、同樣的連結、同樣的費用數字）
+- **產出前提醒使用者**：「這會以你目前的 Markdown 版本為準，後續改 Markdown 後 HTML 不會自動同步，要再說一次才會重新產」
 
 ---
 
@@ -265,7 +276,7 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 關鍵檔案：
 - 行程表：`.claude/reports/final-itinerary.md`（或 `overview.md` + `day-*.md`）
-- 行程網頁版：`.claude/reports/final-itinerary.html`（傳給家人朋友看、手機閱讀）
+- 行程網頁版：需要時跟 Claude 說「幫我出 HTML」才會產
 - 記帳檔：`.claude/reports/expense-log.md` — 使用者提到花費就更新這個檔案
 - 研究報告：`.claude/reports/` 目錄下的 agent 報告
 - 旅行者畫像：`./traveler-profile.md`
@@ -275,12 +286,14 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 1. 顯示行程總覽表（日期+城市+當日重點，不要展開每小時細節）
 2. 顯示總預算試算
-3. 告訴使用者行程已存到哪裡（含記帳模板、HTML 版本的位置）
-4. 問使用者有沒有想調整的地方
+3. 告訴使用者 Markdown 行程已存到哪裡、記帳模板也已建立
+4. 告訴使用者「要網頁版/列印版再跟我說」（不要現在產 HTML）
+5. 問使用者有沒有想調整的地方
 
 如果使用者要調整：
-- 單一檔案模式：直接修改 `final-itinerary.md` + 同步更新 `final-itinerary.html`
-- 分日拆檔模式：修改對應的 `day-N.md` + `day-N.html`，如有影響 `overview.md` / `overview.html` 也一起更新
+- 單一檔案模式：直接修改 `final-itinerary.md`
+- 分日拆檔模式：修改對應的 `day-N.md`，如有影響 `overview.md` 也一起更新
+- 若之前已經產過 HTML，告訴使用者「HTML 不會自動同步，要再說一聲才會重產」
 
 改完說明改了什麼。
 
