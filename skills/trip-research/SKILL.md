@@ -235,6 +235,22 @@ Prompt 要求：
    - 兩個來源必須是**不同 root domain**（例如 `gov.tw` + `lonelyplanet.com`，不能是 `example.com/a` + `example.com/b`）
    - 若兩個來源說法不一致，標「⚠️ 資訊分歧：A 說 X，B 說 Y，建議出發前再次確認」並附雙方 URL
 
+11. **資訊來源優先順序（依清單類別分流）**：
+
+   **體驗類**（A 核心體驗、B2 必吃食物、F1-F3 節日市集、夜生活、拍照 spot、hidden gems、咖啡 / bar / 當紅店）— 使用者真正要的是「此刻在地人 / 旅人推什麼」，傳統旅遊媒體（Lonely Planet / TripAdvisor）往往過時或太主流：
+   - 優先序：**Instagram > TikTok > YouTube vlog > Reddit > Google Maps reviews**
+   - 目的地為日韓 / 東南亞時，**小紅書 升到第 3**
+   - 使用者國籍為中港台時，**小紅書 升到第 2**
+   - Claude 的 agent 無法登入社群、會被 IG / TikTok 擋牆阻擋。**實務做法**：
+     - 用 Google 搜「{地點} instagram 2025」「{地點} tiktok」「{城市} reddit hidden gems」，命中第三方整理文章當間接社群信號
+     - 可訪問的公開 hashtag / location 頁面直接抓
+     - 抓不到社群信號的項目，標「⚠️ 無社群驗證，僅官方媒體資料」
+   - **報告中必須附社群搜尋連結**（即使 agent 抓不到內容）：例如每家推薦餐廳附 IG 搜尋 URL `https://www.instagram.com/explore/search/keyword/?q={餐廳名}`、TikTok `https://www.tiktok.com/search?q={餐廳名}`，讓使用者自己點開驗證當紅程度
+
+   **行政類**（A0 簽證、C 交通、D 住宿政策、E1-E5 安全 / 電壓、G 機票規則、H 保險）— 錯了會出事：
+   - 優先序：**官方政府 / 公司網站 > 權威媒體（Lonely Planet、BBC Travel、官方觀光局）> 其他**
+   - 此類**不看社群**，社群資料無論幾顆愛心都不能當行政決策依據
+
 ## 第五階段：回收並逐項審核清單
 
 所有 agent 回報後，主 Claude 的工作：
