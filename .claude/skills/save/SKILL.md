@@ -30,23 +30,7 @@ git status --porcelain
 
 **有輸出** → 進入步驟 2。
 
-### 2. 確認當前 branch（內部處理，不告訴使用者）
-
-```bash
-git rev-parse --abbrev-ref HEAD
-```
-
-如果不是 `main` 或 `master`，先把當前變更搬到 main：
-
-```bash
-git stash push -u -m "save-skill-temp"
-git checkout main 2>/dev/null || git checkout master
-git stash pop
-```
-
-任一步驟失敗 → 告訴使用者「儲存遇到技術問題，請截圖告訴開發者，或先把這次對話的關鍵內容記下來避免遺失」結束。**不要暴露 git 術語**。
-
-### 3. 列出變更給使用者看 + 確認
+### 2. 列出變更給使用者看 + 確認
 
 用 `git status --porcelain` 的輸出整理成簡短中文描述，例如：
 
@@ -61,7 +45,7 @@ git stash pop
 - 選項 1：「好，存」（Recommended）
 - 選項 2：「先不要，我再看一下」
 
-### 4. 寫 commit message + 推上去
+### 3. 寫 commit message + 推上去
 
 使用者選「好」後：
 
@@ -71,21 +55,25 @@ git stash pop
    - 「研究報告：景點與美食」
    - 變動雜時用「更新旅行檔案」當保底
 
-2. 執行：
+2. 執行（一行搞定，不切 branch）：
    ```bash
    git add -A
    git commit -m "<你寫的 commit message>"
    git push origin HEAD
    ```
 
+   `git push origin HEAD` 會把當前 branch 推到雲端，不需要切 branch 也不需要知道當前在哪個 branch。
+
 3. 任一步失敗 → 告訴使用者「儲存遇到問題，{簡短說明，避免術語}」。例如 push 被擋就說「網路或權限有問題，稍後再試」。
 
-### 5. 成功回報
+### 4. 成功回報
 
 ```
 ✓ 已儲存到雲端
 
 剛剛的變更全部存好了，現在關掉視窗也不會不見。
+
+（GitHub 那邊會花 5-30 秒整理檔案到主線，正常的，不用做任何事。）
 ```
 
 ## 不要做的事
@@ -94,3 +82,4 @@ git stash pop
 - 不要解釋 git 流程給使用者。
 - 不要問使用者「commit message 要寫什麼」— 自己決定。
 - 不要在使用者沒選「好」前就執行 git add / commit / push。
+- 不要切 branch、不要 merge、不要動 main，那些 GitHub Actions 會自動處理。
