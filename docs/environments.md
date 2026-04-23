@@ -2,55 +2,31 @@
 
 不同環境支援度不同，先看表：
 
-## 環境對照表
+| 環境 | 怎麼用 trip skills | 備註 |
+|------|------|------|
+| 桌面 App（Mac / Windows） | 路徑 B 裝到 `~/.claude/skills/` | 全域可用，所有專案通用 |
+| 終端機 CLI | 路徑 B 裝到 `~/.claude/skills/` | 全域可用 |
+| VS Code / JetBrains 擴充 | 路徑 B 裝到 `~/.claude/skills/` | 全域可用 |
+| **claude.ai/code（網頁版）** | 路徑 A 用 GitHub template 建專案 repo | 雲端環境，碰不到 `~/.claude/`，只能讀 repo 內 `.claude/skills/` |
+| **手機 Claude app（iOS / Android）** | 路徑 A 用 GitHub template，在 code 標籤打開 | 跟 claude.ai/code 同原理 |
+| claude.ai 一般對話（手機或網頁） | 透過 Settings → Customize 上傳 skills | 跟 Claude Code 是兩條獨立對話，無法讀寫專案檔 |
 
-| 環境 | 個人 skills (~/.claude/skills/) | 專案 skills (專案/.claude/skills/) | 推薦做法 |
-|------|------|------|------|
-| 桌面 App（Mac / Windows） | ✓ | ✓ | 用[方法一](install.md#方法一)安裝到個人路徑 |
-| 終端機 CLI | ✓ | ✓ | 用[方法一](install.md#方法一)或[方法四](install.md#方法四)安裝到個人路徑 |
-| VS Code / JetBrains 擴充 | ✓ | ✓ | 跟桌面 App 一樣 |
-| **claude.ai/code（網頁版）** | ✗ | ✓ | 必須 clone 到旅行專案資料夾，見下方 |
-| claude.ai 一般對話 | ✓（透過 Settings → Customize 上傳） | — | 跟 Claude Code 是兩條獨立的對話 |
+兩條安裝路徑詳見 [安裝指南](install.md)。
 
-## 為什麼 claude.ai/code 用不到個人 skills？
+## 為什麼 claude.ai/code 與手機 app 要走 GitHub template？
 
-claude.ai/code 跑在 Anthropic 雲端虛擬機，碰不到你電腦的 `~/.claude/`，只能讀打開的那個 GitHub repo 內的 `.claude/skills/`。要用 trip skills，得把它跟旅行專案一起 commit 上 GitHub。
+claude.ai/code 與手機 Claude app 的 code 標籤都是 Anthropic 雲端代管環境，跑在遠端虛擬機上，**碰不到你電腦的 `~/.claude/`**。它只能讀你打開的那個 GitHub repo 內的 `.claude/skills/`。
 
-## 在 claude.ai/code 使用 trip skills 的做法
+GitHub template 解法把 trip skills 跟旅行專案打包在同一個 repo，雲端打開就能用。
 
-> 📌 **要 GitHub 帳號。** 把它想成「會記錄變動的雲端空間」，免費註冊就有，不用會寫程式。[沒帳號？點這註冊](https://github.com/signup)。
->
-> 完全不想碰 GitHub？這條路不適合你，請改用桌面 App 或 CLI（看[安裝指南](install.md)）。注意：規劃文件要在手機上看與編輯，目前**只能透過 GitHub 同步**，沒有其他可靠方案。
+## 重要：載入時機（已實測）
 
-### 做法 A：把 skills 放進旅行專案（最直接）
+在 claude.ai/code 或手機 Claude app 第一次打開專案時，**輸入 `/` 不會出現 trip 指令的自動完成提示**。
 
-1. 建一個 GitHub repo 當你的旅行專案資料夾（例如 `my-paris-trip`）
-2. 在 repo 裡建 `.claude/skills/`，把 trip skills 複製進去：
+原因：當你從下拉選單選了專案，Claude 還沒真的去讀那個專案 — 要等你送出第一則訊息，Claude 才會載入專案上下文並掃到 `.claude/skills/`。
 
-   ```bash
-   git clone https://github.com/fdjkgh580/claude-trip-skills.git /tmp/trip
-   mkdir -p .claude/skills
-   cp -r /tmp/trip/skills/trip-* .claude/skills/
-   rm -rf /tmp/trip
-   ```
-3. commit 並 push 到 GitHub
-4. 在 claude.ai/code 打開這個 repo，就能用 `/trip` 了
+**做法**：先打個招呼（例如「hi」），送出。第二次再打 `/`，就會看到 `/trip`、`/trip-plan` 等指令的自動完成。
 
-### 做法 B：用 git submodule（想之後追上游更新時）
+## 規劃文件想在手機看？
 
-```bash
-cd my-paris-trip
-git submodule add https://github.com/fdjkgh580/claude-trip-skills.git .claude/skills/claude-trip-skills
-git commit -m "Add trip skills as submodule"
-git push
-```
-
-之後想升級，`git submodule update --remote` 一行搞定。
-
-> ⚠️ **submodule 路徑注意：**Claude Code 掃描 `.claude/skills/<skill-name>/SKILL.md`，submodule 進來路徑會多一層 `.claude/skills/claude-trip-skills/skills/trip-go/SKILL.md`。若 `/trip` 沒出現，改用做法 A。
-
-## 載入時機（觀察）
-
-> 使用者實測，**官方文件未明確說明**：第一次打開專案時 `/` 自動完成可能還沒掃到 trip skills，先打一句「hi」讓 Claude 載入上下文，再輸入 `/` 通常就出現。
-
-→ 想了解手機怎麼用，看 [mobile.md](mobile.md)。
+→ 看 [手機用法](mobile.md)。簡短答案：要在手機**看完整規劃並編輯**，就用 GitHub template 路線，本身就具備同步能力（commit & pull）。Notion / iCloud 不適合規劃工作流（無法雙向同步、無法被 Claude 讀寫）。

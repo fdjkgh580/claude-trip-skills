@@ -1,43 +1,35 @@
 # 安裝指南
 
-四種方式擇一，新手用方法一。
+兩條路線，挑一條：
 
-### 你需要先有
+- **路徑 A**：手機 / claude.ai/code 使用者 → GitHub template，零指令
+- **路徑 B**：桌面 App / 終端機使用者 → git clone + install.sh，一次裝到全域
 
-- Claude 桌面版（[下載](https://claude.ai/download)）或 [claude.ai](https://claude.ai)，切到 **Cowork** 或 **Code** 分頁
-- Claude **Pro** 或 **Max** 訂閱
-- 進階：終端機 CLI（Mac `brew install --cask claude-code`，其他平台看[官方指南](https://code.claude.com/docs/en/overview)）
+## 你需要先有
 
-> 💡 Windows 路徑對照（作者用 Mac，未實測，歡迎 PR 修正）：
->
-> | Mac / Linux | Windows |
-> |-------------|---------|
-> | `~/.claude/skills/` | `%USERPROFILE%\.claude\skills\` |
-> | 終端機 | PowerShell |
-> | Finder | 檔案總管 |
-> | `brew install` | 看官方安裝指南 |
+- Claude Pro 或 Max 訂閱
+- 路徑 A：GitHub 帳號（[沒帳號到這註冊](https://github.com/signup)）
+- 路徑 B：[Claude 桌面版](https://claude.ai/download)（Mac 也可用 `brew install --cask claude-code`，其他平台看[官方指南](https://code.claude.com/docs/en/overview)）
 
-### 方法一：在 Claude Code 裡貼一句話（推薦，不需技術背景）
+## 路徑 A：GitHub Template（新手友善，零指令）
 
-把這句貼到對話框送出，Claude 會搞定下載與安裝。完成後建好旅行資料夾，打 `/trip` 開始。
+1. 開 https://github.com/fdjkgh580/claude-trip-skills
+2. 點綠色的 **Use this template** → **Create a new repository**
+3. 命名你的旅行專案（例如 `my-paris-trip`），建議選 **Private**，按 **Create**
+4. 在 [claude.ai/code](https://claude.ai/code) 或手機 Claude app 的 code 標籤，指定剛建的 repo 開新對話
+5. **先打個招呼**（例如「hi」）讓 Claude 載入專案。這步必要 — 第一次打 `/` 還掃不到 skills，要先送一次訊息 Claude 才會去讀專案
+6. 接著打 `/trip`，開始規劃
 
-> 幫我安裝這個旅行規劃技能包：https://github.com/fdjkgh580/claude-trip-skills
+> 💡 每趟旅行建一個新 template repo，旅行資料跟 skills 同 repo 但互不打架（skills 在 `.claude/skills/`，旅行檔在根目錄）。
 
-### 方法二：手動下載再匯入（不想讓 Claude 碰檔案系統時）
+### 升級 skills（之後想拉新版）
 
-到 [GitHub 頁面](https://github.com/fdjkgh580/claude-trip-skills) → 綠色 **Code** 按鈕 → **Download ZIP**，解壓後跟 Claude Code 說：
+template 出來的 repo 不會自動跟原 repo 同步。想升級時：
+1. 到原 repo 下載最新 `.claude/skills/` 整個資料夾
+2. 蓋掉你 repo 裡的 `.claude/skills/`
+3. commit & push
 
-> 我下載了旅行規劃技能包，解壓在「下載」資料夾裡的 claude-trip-skills-main，幫我安裝起來
-
-### 方法三：一行指令安裝（工程師適用，僅 Mac / Linux）
-
-```bash
-git clone https://github.com/fdjkgh580/claude-trip-skills.git /tmp/claude-trip-skills && cp -r /tmp/claude-trip-skills/skills/trip-* ~/.claude/skills/ && rm -rf /tmp/claude-trip-skills
-```
-
-### 方法四：Clone + symlink（想自己改 skill 內容用，僅 Mac / Linux）
-
-clone 後跑 install.sh 建立 symlink，改 repo 直接生效。換電腦時重跑這 3 行還原。
+## 路徑 B：git clone + install.sh（桌面 / CLI，全域安裝）
 
 ```bash
 git clone https://github.com/fdjkgh580/claude-trip-skills.git ~/Projects/claude-trip-skills
@@ -45,16 +37,31 @@ cd ~/Projects/claude-trip-skills
 ./scripts/install.sh
 ```
 
-### （選配）機票搜尋功能
+install.sh 會在 `~/.claude/skills/` 建立 symlink 連回 repo。**任何資料夾**打開 Claude Code 都能用 `/trip`。改 repo 內檔案會直接生效，不用重裝。
 
-想讓 Claude 搜尋機票，在 Claude Code 貼：
+換電腦時重複上面 3 行就還原。
+
+升級：
+```bash
+cd ~/Projects/claude-trip-skills && git pull
+```
+
+> Windows 使用者：本 repo 作者用 Mac，install.sh 未在 Windows 實測。請改用路徑 A，或自行在 PowerShell 對應 symlink 寫法。歡迎 PR 補 Windows 版。
+
+## （選配）機票搜尋功能
+
+想讓 Claude 幫你搜尋機票？在 Claude Code 裡貼上：
 
 ```bash
 claude mcp add kiwi-com --transport http https://mcp.kiwi.com
 ```
 
-沒裝也行，Claude 會改用網路搜尋給參考價格與訂票平台。
+沒裝也沒關係，Claude 會改用網路搜尋。
 
 ## 驗證安裝成功
 
-輸入 `/trip` 應看到旅行進度檢查回應。若 `/` 後沒看到 `trip` 指令，先隨便打個招呼讓 Claude 載入上下文，再試一次。
+打 `/trip` 應該看到旅行進度檢查回應。
+
+**如果 `/` 沒看到 trip 開頭的指令**：
+- 路徑 A 在 claude.ai/code：先送一句訊息再試（要先載入專案上下文）
+- 路徑 B 在桌面 / CLI：確認你打開的資料夾不是 `~/.claude/skills/` 本身（要在另一個資料夾才看得到 user-invocable skills）

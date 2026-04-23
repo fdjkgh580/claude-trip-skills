@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 把 skills/ 底下的資料夾 symlink 到 ~/.claude/skills/
+# 把 .claude/skills/ 底下的資料夾 symlink 到 ~/.claude/skills/
 # 之後只要改 repo 內的檔案，~/.claude/skills/ 自動同步
 # 遇到已存在的目標時會詢問是否覆寫
 
@@ -74,7 +74,7 @@ info "Target: $CLAUDE_HOME"
 echo ""
 
 info "處理 skills..."
-link_dir_contents "$REPO_ROOT/skills" "$CLAUDE_HOME/skills"
+link_dir_contents "$REPO_ROOT/.claude/skills" "$CLAUDE_HOME/skills"
 echo ""
 
 ok "完成"

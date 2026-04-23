@@ -20,7 +20,7 @@
 | 4. 幫你檢查 | `/trip-review` | 自動查 21 項常見錯誤（星期寫錯、景點沒開、轉機來不及、時差沒考慮、費用算錯等），查到就直接修正 |
 | 5. 打包清單 | `/trip-pack` | 依你的目的地和興趣生成行前準備清單（攝影→備用記憶卡、家庭→依小孩年齡列不同物品） |
 
-> 💡 **記不住順序也沒關係：**隨時打 `/trip` 就會告訴你目前進度和下一步該做什麼。
+> 💡 **記不住順序也沒關係：**隨時打 `/trip` 就會告訴你目前進度，並直接問你「要不要現在跑下一步？」點選擇就好，連指令都不用打。
 
 ### 旅途中（不需要打任何指令，直接聊天）
 
@@ -33,47 +33,41 @@
 | 「多出兩小時空檔」 | 根據你的位置和興趣推薦附近去處 |
 | 「我被扒了怎麼辦」 | 立刻提供報案地點、駐外館處電話 |
 
-## 30 秒上手
+## 兩種使用方式，挑一個
 
-1. 下載 [Claude 桌面 App](https://claude.ai/download)（最簡單）或開 [claude.ai](https://claude.ai)
-2. 把這句話貼給 Claude：
-   > 幫我安裝這個旅行規劃技能包：https://github.com/fdjkgh580/claude-trip-skills
-3. 在 Finder 建一個資料夾（例如 `Trips/巴黎-2026春`），用它開新對話
-4. 打 `/trip`，Claude 會帶你接下來的每一步
+### 路徑 A：手機 / claude.ai/code 使用者（不用裝任何東西）
 
-> 💡 **不確定該打什麼？永遠先打 `/trip`。** 它會看你的進度告訴你下一步。
+1. 開 https://github.com/fdjkgh580/claude-trip-skills
+2. 點綠色的「Use this template」→「Create a new repository」→ 命名（例如 `my-paris-trip`）→ 建議選 private → Create
+3. 在 claude.ai/code 或手機 Claude app 的 code 標籤，指定剛建的 repo 開新對話
+4. 先打個招呼（例如「hi」）讓 Claude 載入專案 — 這步必要，第一次打 `/` 還掃不到 skills
+5. 接著打 `/trip`，Claude 會問你要不要開始規劃，點選擇就好
 
-其他安裝方式（手動下載、git clone、symlink、Windows）→ 看 [docs/install.md](docs/install.md)
+### 路徑 B：桌面 App / CLI 使用者（裝一次到全域，所有專案通用）
+
+```bash
+git clone https://github.com/fdjkgh580/claude-trip-skills.git ~/Projects/claude-trip-skills
+cd ~/Projects/claude-trip-skills
+./scripts/install.sh
+```
+
+裝完後在任何旅行資料夾打 `/trip` 都生效。詳細說明 → [docs/install.md](docs/install.md)
 
 ## 在哪些環境可以用？
 
-| 環境 | 是否能用 trip skills |
+| 環境 | 怎麼用 |
 |------|------|
-| 桌面 App / 終端機 / IDE 擴充 | ✓ 個人安裝即可 |
-| **claude.ai/code（網頁版）** | ⚠️ 須把 skills 放進專案 repo 的 `.claude/skills/` |
-| claude.ai 一般對話 | ✓ 透過 Settings → Customize 上傳 |
+| 桌面 App / 終端機 / IDE 擴充 | 路徑 B 裝到全域 |
+| claude.ai/code（網頁版） | 路徑 A 用 template repo |
+| 手機 Claude app（iOS / Android） | 路徑 A 用 template repo，在 code 標籤打開 |
+| claude.ai 一般對話 | 透過 Settings → Customize 上傳（跟 Claude Code 是兩條獨立對話） |
 
-詳細差異與 claude.ai/code 的具體做法 → 看 [docs/environments.md](docs/environments.md)
-
-## 開始之前：建一個專屬資料夾
-
-每趟旅行用一個獨立資料夾，Claude 會把行程、研究報告、記帳檔全部存在裡面，不同旅行互不干擾。
-
-**桌面 App / Web 版：**Finder 或檔案總管建資料夾（例如 `Trips/巴黎-2026春`），打開 Claude Code 用「+ 號」選擇這個資料夾開新對話，進去打 `/trip`。
-
-**終端機 CLI：**
-```bash
-mkdir -p ~/Trips/巴黎-2026春
-cd ~/Trips/巴黎-2026春
-claude
-```
-
-進去後打 `/trip`。
+詳細差異與限制 → [docs/environments.md](docs/environments.md)
 
 ## 更多文件
 
-- [安裝指南](docs/install.md) — 四種安裝方法、Windows 對照、選配 MCP
-- [環境支援](docs/environments.md) — 桌面/CLI/Web/code 各環境的差異與限制
+- [安裝指南](docs/install.md) — 兩條路線（template / install.sh）詳細步驟、升級方式
+- [環境支援](docs/environments.md) — 各環境差異、claude.ai/code 載入時機（要先送一句訊息才會掃 skills）
 - [手機用法](docs/mobile.md) — 旅途中怎麼在手機上用
 - [特色功能](docs/features.md) — 風格識別、自動記帳、抓錯、家庭旅行
 - [常見問題](docs/faq.md)
