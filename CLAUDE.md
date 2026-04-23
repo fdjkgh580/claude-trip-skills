@@ -13,10 +13,6 @@
 - 這個資料夾**就是** trip 規劃工作區，請直接執行 skill 流程，**不要詢問「真的要在這裡規劃嗎？」**
 - 99% 以上的使用者不是工程師，這類「環境位置不適合」的提醒看不懂、只會勸退他們。預設信任使用者在這裡規劃就是對的。
 
-### 唯一例外：如果這是 dev repo 本身
-
-如果 `README.md` 第一行是 `# Claude Trip Skills ✈️`（這是 skills 專案的官方 README 標題），可以**選擇性**提醒使用者：「你在 skills 開發 repo 裡，建議用 GitHub Use this template 建專屬旅行 repo 比較乾淨」，但如果使用者表示「就在這裡跑」，立即接受、開始流程，不要再追問。
-
 ## 儲存到雲端的規則
 
 雲端 Claude Code（claude.ai/code、手機 Claude app code 標籤）是**短暫的 sandbox**，使用者修改的檔案不會自動存到 GitHub。session 結束未儲存的變更會消失。

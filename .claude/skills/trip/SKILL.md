@@ -51,41 +51,19 @@ disable-model-invocation: true
 
 #### 如果還沒開始規劃（A 不存在）
 
-**核心原則：預設信任使用者**。99% 使用者不是工程師，看不懂「環境位置」類警告。除非位置真的明顯爛（家目錄、Downloads、/tmp 這類絕對不對的地方），否則直接進入「位置 OK」流程。
+直接告訴使用者並彈 AskUserQuestion，**不要做任何位置檢查、不要警告、不要提 dev repo / template / Use this template 之類概念**。
 
-**先做兩個快速判斷：**
+> 這個資料夾還沒有任何旅行檔案，可以從這裡開始規劃 ✨
 
-1. **是否為 trip-aware 工作區**：檢查當前目錄是否有 `.claude/skills/trip-plan/SKILL.md`（或專案根有 CLAUDE.md 提到「trip 規劃技能」字樣）。如果是，**直接跳到「位置 OK 但還沒開始」**，不做任何位置警告。
+接著用 `AskUserQuestion` 問「要現在開始規劃旅行嗎？」選項：
+- 「好，開始」（Recommended）— 跑 `/trip-plan` 開始規劃
+- 「先不要」— 暫時不規劃，稍後再來
 
-2. **是否為明顯不適合的位置**（嚴格黑名單）：當前 `pwd` 是以下之一：
-   - 家目錄本身（`~` 或 `$HOME`）
-   - `~/Downloads`、`~/Desktop`、`/tmp`
-   - 不要把 `~/Documents`、`~/Projects`、有 README.md 的資料夾等列入黑名單，這些都是合理位置
-
-**位置不合適時**（只有上面嚴格黑名單命中才彈）：
-
-> 看起來你現在在 `{pwd}`，這裡不太適合放旅行檔案（會跟其他東西混在一起）。
->
-> 建議：
-> 1. 先建一個專屬資料夾，例如 `~/Trips/巴黎-2026春`
-> 2. 在那個資料夾打開 Claude
-> 3. 再執行 `/trip-plan`
-
-**位置 OK 但還沒開始**（含 trip-aware 工作區、含一般專案資料夾）：
-
-> 這個資料夾還沒有任何旅行檔案。
-
-接著用 `AskUserQuestion` 問：「要現在開始規劃嗎？」選項：
-- 「好，開始（跑 `/trip-plan`）」（Recommended）
-- 「先不要」
-
-**特例：dev repo 識別（提醒但不阻擋）**
-
-如果偵測到當前目錄是 trip skills 的開發 repo（特徵：根目錄 `README.md` 第一行為 `# Claude Trip Skills ✈️`），可在彈 AskUserQuestion 之前**選擇性**加一句提醒：
-
-> 💡 看起來你在 trip skills 的開發 repo。如果只是想規劃一趟旅行，到 GitHub 按「Use this template」建一個專屬旅行 repo 會更乾淨。但如果你想就在這裡跑，按下面的「好，開始」即可。
-
-提醒之後**仍然彈** AskUserQuestion，使用者點「好，開始」就直接跑，**不要再追問「真的要在這裡？」**。
+**不要**做以下事情（避免守門員語氣）：
+- 不要檢查當前路徑是不是「家目錄」「Downloads」「Desktop」這類「不適合」的位置 — 信任使用者，他既然在這個資料夾打 `/trip` 就是有意這樣做
+- 不要偵測 README、scripts/、docs/ 之類「程式碼專案」特徵
+- 不要提到「Use this template」「dev repo」「開發資料夾」「比較乾淨」這類概念
+- 不要建議使用者「先建一個專屬資料夾」 — 他自己會判斷
 
 #### 如果已經有進度
 
