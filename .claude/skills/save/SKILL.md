@@ -45,7 +45,7 @@ git status --porcelain
 - 選項 1：「好，存」（Recommended）
 - 選項 2：「先不要，我再看一下」
 
-### 3. 寫 commit message + 推上去
+### 3. 寫 commit message + 推上去 + 整理到主線
 
 使用者選「好」後：
 
@@ -55,16 +55,35 @@ git status --porcelain
    - 「研究報告：景點與美食」
    - 變動雜時用「更新旅行檔案」當保底
 
-2. 執行（一行搞定，不切 branch）：
+2. 執行（**全部依序**，不要跳步驟）：
+
    ```bash
+   # 先把當前變更存到當前 branch
    git add -A
    git commit -m "<你寫的 commit message>"
-   git push origin HEAD
+
+   # 偵測當前 branch
+   CURRENT=$(git rev-parse --abbrev-ref HEAD)
+
+   if [ "$CURRENT" = "main" ] || [ "$CURRENT" = "master" ]; then
+     # 已經在 main，直接 push
+     git push origin "$CURRENT"
+   else
+     # 在 feature branch：先把 feature push 上去，然後切 main 合併再推
+     git push origin "$CURRENT"
+     git checkout main 2>/dev/null || git checkout master
+     git pull origin HEAD
+     git merge --no-ff "$CURRENT" -m "整合 $CURRENT 的變更"
+     git push origin HEAD
+     # 清掉 feature branch（本機 + 遠端）
+     git branch -d "$CURRENT"
+     git push origin --delete "$CURRENT"
+   fi
    ```
 
-   `git push origin HEAD` 會把當前 branch 推到雲端，不需要切 branch 也不需要知道當前在哪個 branch。
+3. 任一步失敗 → 告訴使用者「儲存遇到問題，{簡短說明，避免術語}」。例如 push 被擋就說「網路或權限有問題，稍後再試」。**不要暴露 git 指令、branch 名稱**。
 
-3. 任一步失敗 → 告訴使用者「儲存遇到問題，{簡短說明，避免術語}」。例如 push 被擋就說「網路或權限有問題，稍後再試」。
+4. 最終結果：使用者的工作目錄停在 `main`，所有變更都在 main 上、雲端也是。
 
 ### 4. 成功回報
 
@@ -72,8 +91,6 @@ git status --porcelain
 ✓ 已儲存到雲端
 
 剛剛的變更全部存好了，現在關掉視窗也不會不見。
-
-（GitHub 那邊會花 5-30 秒整理檔案到主線，正常的，不用做任何事。）
 ```
 
 ## 不要做的事
@@ -82,4 +99,3 @@ git status --porcelain
 - 不要解釋 git 流程給使用者。
 - 不要問使用者「commit message 要寫什麼」— 自己決定。
 - 不要在使用者沒選「好」前就執行 git add / commit / push。
-- 不要切 branch、不要 merge、不要動 main，那些 GitHub Actions 會自動處理。
