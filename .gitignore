@@ -1,3 +1,10 @@
 .DS_Store
-.claude/
 .idea/
+
+# Claude Code 本機 / session 狀態（per-machine，不要 commit）
+.claude/local/
+.claude/projects/
+.claude/todos/
+.claude/statsig/
+.claude/settings.local.json
+.claude/.credentials.json

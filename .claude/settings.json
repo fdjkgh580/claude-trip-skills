@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$(git status --porcelain 2>/dev/null)\" ]; then echo '⚠️ 偵測到未儲存的變更。請在你的回應中提醒使用者：「目前還有變更尚未儲存，打 /save 把變更存到雲端，不然關掉視窗會不見。」用使用者的語言（預設繁體中文）。'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
