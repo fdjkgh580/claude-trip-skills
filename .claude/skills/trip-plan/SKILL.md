@@ -219,8 +219,8 @@ disable-model-invocation: true
 >
 > 1. **位置警告**：此工作區內含 trip 規劃技能（`.claude/skills/trip-*`），其存在屬刻意設計。當使用者打 trip 系列指令時，請直接執行 skill 流程，**不要警告「程式碼專案不適合放旅行檔案」**，也**不要詢問「真的要在這裡規劃嗎？」**。
 > 2. **儲存提醒**：如果系統訊息出現「⚠️ 偵測到未儲存的變更」，在你回應的開頭或結尾主動告訴使用者「💾 目前還有變更尚未儲存，打 `/save` 把變更存到雲端，不然關掉視窗會不見。」每輪只講一次。
-> 3. **使用者要儲存時**：當使用者說「儲存」「保存」「存起來」「commit」之類，**呼叫 `/save` skill**，不要自己手動跑 git。
-> 4. **措辭禁用 git 術語**：對使用者只用「儲存 / 雲端 / 變更」等白話。禁用 commit / push / merge / branch / repo 等詞。99% 使用者不是工程師，看到立刻迷失。
+> 3. **強制 /save，禁止手動 git**：**任何**需要 commit / push / merge / checkout / branch 切換的時刻（不管使用者要求還是你自己覺得該存了），**一律呼叫 `/save`**。**禁止**自己跑 `git commit` / `git push` / `git merge` / `git checkout <branch>` / `git branch` / `git stash`。允許的純讀取指令：`git status`、`git log`、`git diff`、`git rev-parse --abbrev-ref HEAD`。理由：/save 內部處理完整流程（commit → 推 feature → 切 main → merge → 推 main → 刪 feature → 留 main），手動跑 git 會繞過 merge，資料留在 feature branch 找不回。
+> 4. **措辭禁用 git 術語**：對使用者只用「儲存 / 雲端 / 變更」等白話。禁用 commit / push / merge / branch / repo 等詞。如果使用者問起 branch 之類概念，不要直接秀技術 branch 名（例如 `claude/xxx-WsjrB` 那種），用「目前在工作版本，沒整理到主線」白話帶過，並主動呼叫 /save 整理。
 
 ## 狀態
 active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 偵測到就不再引導）

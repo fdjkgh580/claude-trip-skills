@@ -25,9 +25,43 @@
 
 不要等使用者問，主動講。但**每輪只講一次**（不要重複嘮叨）。
 
-### 使用者要求儲存時
+### 強制使用 /save：禁止手動跑 git 寫入操作
 
-當使用者說「儲存」「保存」「存到雲端」「commit」「存起來」這類詞，或主動問「會不會不見」「怎麼存」，**呼叫 `/save` skill**處理，不要自己手動跑 git 指令。
+**任何**需要 commit / push / merge / checkout / branch 切換的時刻，**一律呼叫 `/save` skill**，**絕對禁止**自己跑這些指令。
+
+觸發 /save 的所有情境：
+
+- ✓ 使用者說「儲存」「保存」「存到雲端」「commit」「存起來」「會不會不見」 → 呼叫 /save
+- ✓ 你（Claude）剛寫完檔案、覺得「該存了」 → 呼叫 /save，**不要自己跑 git**
+- ✓ 對話接近結束、想留一份備份 → 呼叫 /save
+- ✓ trip 系列 skill 寫完檔後 → 呼叫 /save，**不要自己跑 git**
+
+**禁止使用的指令**（會改動 repo 狀態的全禁）：
+- `git commit`、`git add`
+- `git push`
+- `git merge`
+- `git checkout <branch>`、`git switch <branch>`
+- `git branch <new>`、`git branch -d`
+- `git stash`、`git rebase`
+
+**唯一允許自己跑**：純讀取的 git 指令（不改狀態）：
+- `git status`
+- `git log`
+- `git diff`
+- `git rev-parse --abbrev-ref HEAD`（看當前 branch 名）
+
+理由：/save 內部負責完整流程（commit → 推 feature branch → 切 main → merge → 推 main → 刪 feature branch → 留在 main）。手動跑 git 會繞過這個流程，導致資料卡在 feature branch、main 永遠空，使用者下次找不到。
+
+### 使用者問起 git/branch 概念時
+
+如果使用者主動問「我在哪個 branch」「為什麼有 claude/xxx 那串東西」「main 怎麼沒更新」之類問題：
+
+1. **不要直接秀技術 branch 名**（例如 `claude/create-helloworld-md-WsjrB`）
+2. 用最白話回答：「目前在工作版本，沒整理到主線」
+3. **主動呼叫 /save**：「我幫你整理一下，整理完就只剩主線一個版本，乾乾淨淨」
+4. /save 跑完後，使用者就停在 main，下次也不會再看到 branch 名
+
+**唯一例外**：如果使用者用了「branch」「checkout」「merge」這類詞並表現出懂 git，可以正常用術語回答。但仍要主動 invoke /save 處理 merge 到 main。
 
 ### 措辭硬規則
 
