@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 1. 讀取 `CLAUDE.md` 取得行程概要
 2. 讀取 `./traveler-profile.md` 取得旅行者畫像
-3. 讀取 `.claude/reports/index.md` 確認研究報告存在
+3. 讀取 `research/index.md` 確認研究報告存在
 4. 讀取所有 agent 報告
 5. 如果研究報告不存在，提醒使用者先執行 `/trip-research`
 
@@ -43,18 +43,17 @@ disable-model-invocation: true
 
 ### 單一檔案模式（預設）
 
-所有天數寫入 `.claude/reports/final-itinerary.md`。
+所有天數寫入 `final-itinerary.md`。
 
 ### 分日拆檔模式
 
 產出以下檔案結構：
 ```
-.claude/reports/
-├── overview.md          # 行程總覽（日期+城市+主題+預算摘要）
-├── day-1.md             # 第 1 天完整行程
-├── day-2.md             # 第 2 天完整行程
-├── ...
-└── day-N.md
+overview.md          # 行程總覽（日期+城市+主題+預算摘要）
+day-1.md             # 第 1 天完整行程
+day-2.md             # 第 2 天完整行程
+...
+day-N.md
 ```
 
 N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/2 出發、4/10 回到家的行程，就是 day-1.md（4/2）到 day-9.md（4/10）。
@@ -73,8 +72,8 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 **當使用者說「出 HTML」「產網頁版」「給我 HTML 給家人看」這類訊號時**，用下方規範把當前 Markdown 轉 HTML：
 
-- 單一檔案 → `.claude/reports/final-itinerary.html`
-- 分日拆檔 → `.claude/reports/overview.html` + `day-N.html`（每天一份）
+- 單一檔案 → `final-itinerary.html`
+- 分日拆檔 → `overview.html` + `day-N.html`（每天一份）
 
 ### HTML 產出規範（使用者要求時才用）
 
@@ -225,7 +224,7 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 ## 旅途記帳系統
 
-行程表產出完成後，額外生成 `.claude/reports/expense-log.md`，由 Claude 在旅途對話中自動維護。
+行程表產出完成後，額外生成 `expense-log.md`，由 Claude 在旅途對話中自動維護。
 
 ### 記帳檔初始格式
 
@@ -275,10 +274,10 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 旅行期間 {日期範圍}。新對話時先讀今天的行程，主動顯示今天城市和接下來的行程。
 
 關鍵檔案：
-- 行程表：`.claude/reports/final-itinerary.md`（或 `overview.md` + `day-*.md`）
+- 行程表：`final-itinerary.md`（或 `overview.md` + `day-*.md`）
 - 行程網頁版：需要時跟 Claude 說「幫我出 HTML」才會產
-- 記帳檔：`.claude/reports/expense-log.md` — 使用者提到花費就更新這個檔案
-- 研究報告：`.claude/reports/` 目錄下的 agent 報告
+- 記帳檔：`expense-log.md` — 使用者提到花費就更新這個檔案
+- 研究報告：`research/` 目錄下的 agent 報告
 - 旅行者畫像：`./traveler-profile.md`
 ```
 

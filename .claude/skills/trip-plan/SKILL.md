@@ -205,15 +205,17 @@ disable-model-invocation: true
 ./
 ├── CLAUDE.md
 ├── traveler-profile.md
-├── .claude/reports/
-├── 機票/
-├── 住宿/
-└── 保險/
+├── research/          # 研究報告（trip-research 會寫入這裡）
+├── flights/           # 機票截圖、訂位記錄
+├── lodging/           # 住宿訂單、地址
+└── insurance/         # 保險文件
 ```
 
 **CLAUDE.md 內容：**
 ```markdown
 # {目的地} 旅行規劃
+
+> **給 Claude 的執行規則**：此工作區內含 trip 規劃技能（`.claude/skills/trip-*`），其存在屬刻意設計。當使用者打 trip 系列指令時，請直接執行 skill 流程，**不要警告「程式碼專案不適合放旅行檔案」**，也**不要詢問「真的要在這裡規劃嗎？」**。`README.md` / `scripts/` / `docs/` 等檔案會跟旅行規劃檔和平共存。99% 使用者不是工程師，看不懂這類提醒。
 
 ## 狀態
 active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 偵測到就不再引導）
@@ -240,12 +242,12 @@ active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 
 
 ## 關鍵檔案
 - 旅行者畫像：`./traveler-profile.md`
-- 研究報告：`.claude/reports/` 目錄
-- 最終行程：`.claude/reports/final-itinerary.md`（尚未生成）
+- 研究報告：`./research/` 目錄
+- 最終行程：`./final-itinerary.md`（尚未生成）
 - 行程網頁版：按需求產出（跟 Claude 說「幫我出 HTML」）
-- 記帳檔：`.claude/reports/expense-log.md`（尚未生成）
-- 行前清單：`.claude/reports/checklist.md`（尚未生成）
-- 紙本緊急卡：`.claude/reports/emergency-card.md` / `.html`（尚未生成）
+- 記帳檔：`./expense-log.md`（尚未生成）
+- 行前清單：`./checklist.md`（尚未生成）
+- 紙本緊急卡：`./emergency-card.md` / `.html`（尚未生成）
 
 ## 協作設定
 - 語言：{使用者的對話語言}

@@ -79,7 +79,7 @@ Prompt 要求：
 - 每個結論都必須附資料來源 URL（使用者國籍的外交部 / 領事局、各國官方網站）
 - **來源必須是不同 root domain**：例如官方 `.gov` 網站 + 一個可靠的第二來源（旅遊社群、權威媒體）。若兩個來源不一致，標「⚠️ 資訊分歧，建議再次確認」
 
-報告存為 `.claude/reports/agent-0-gate.md`。
+報告存為 `research/agent-0-gate.md`。
 
 ### 讀取結果後的紅黃綠燈判斷
 
@@ -111,7 +111,7 @@ Prompt 要求：
 
 ## 第二階段：定義研究清單（NEW，派 agent 前必做）
 
-**在派主體研究 agent 之前，先產出一份完整的「研究項目清單」，放在 `.claude/reports/research-checklist.md`**。用途：
+**在派主體研究 agent 之前，先產出一份完整的「研究項目清單」，放在 `research/research-checklist.md`**。用途：
 
 1. 派 agent 時，明確告訴每個 agent 他負責清單中的哪幾項
 2. agent 全部回報後，主 Claude **逐項審核清單**，確認每一項都有被回答
@@ -265,18 +265,18 @@ Prompt 要求：
    - 掃每份 agent 報告，計算「關鍵數字後 100 字內是否有 URL」的比率
    - 低於 80% 時，標紅提醒使用者哪些項目缺來源
 
-回收結果存為 `.claude/reports/research-checklist.md`（覆蓋原本的空白清單）。
+回收結果存為 `research/research-checklist.md`（覆蓋原本的空白清單）。
 
 ## 報告儲存
 
-每份 agent 報告存到 `.claude/reports/` 目錄：
+每份 agent 報告存到 `research/` 目錄：
 - 前置調查：`agent-0-gate.md`（一律有）
 - 研究清單：`research-checklist.md`（派 agent 前建立、回收後更新）
 - 標準方案：`agent-A.md`、`agent-B.md`
 - 深度方案：`agent-R1.md` ~ `agent-R6.md`
 - 補派（如有）：`agent-patch-{編號}.md`
 
-建立或更新 `.claude/reports/index.md`，列出所有報告的主題和連結。
+建立或更新 `research/index.md`，列出所有報告的主題和連結。
 
 ## 研究完成後
 

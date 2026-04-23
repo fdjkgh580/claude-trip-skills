@@ -14,8 +14,8 @@ disable-model-invocation: true
 1. 讀取 `./traveler-profile.md` 取得旅行者畫像，確認行程輸出格式（若畫像中無「行程輸出格式」欄位，從 CLAUDE.md 的協作設定讀取；兩者皆無則預設單一檔案模式）
 2. 讀取 `CLAUDE.md` 取得行程概要
 3. 根據輸出格式讀取行程表：
-   - 單一檔案模式：讀取 `.claude/reports/final-itinerary.md`
-   - 分日拆檔模式：讀取 `.claude/reports/overview.md` 及所有 `day-*.md`
+   - 單一檔案模式：讀取 `final-itinerary.md`
+   - 分日拆檔模式：讀取 `overview.md` 及所有 `day-*.md`
 4. 如果行程表不存在，提醒使用者先執行 `/trip-go`
 
 ## 審查項目
@@ -69,9 +69,9 @@ disable-model-invocation: true
     - 交通路線是否有施工或改線
     - 餐廳是否仍在營業（小店倒閉率高）
     - 只驗證會直接影響行程成敗的項目，不需要每個都查。**每次審查最多驗證 8 個關鍵項目**，優先驗證：火車/巴士發車時間、博物館休館日、餐廳是否仍營業。
-17. **研究報告間矛盾** — 讀取 `.claude/reports/` 中的 agent 報告，檢查不同報告間是否有矛盾資訊（例如 A 報告說某餐廳週一公休、B 報告卻排在週一去）。有矛盾時以最新的網路搜尋結果為準
+17. **研究報告間矛盾** — 讀取 `research/` 中的 agent 報告，檢查不同報告間是否有矛盾資訊（例如 A 報告說某餐廳週一公休、B 報告卻排在週一去）。有矛盾時以最新的網路搜尋結果為準
 18. **時效性資訊標記** — 檢查行程中是否有依賴時效性資訊的項目（特展結束日、季節限定活動、簽證政策變更等），在審查報告中特別標記「出發前請再確認」
-19. **Source citation 覆蓋率** — 讀取 `.claude/reports/research-checklist.md`（若存在）和所有 agent 報告，檢查：
+19. **Source citation 覆蓋率** — 讀取 `research/research-checklist.md`（若存在）和所有 agent 報告，檢查：
     - 行程表中的關鍵數字（票價、營業時間、距離、車資）後 100 字內是否有 URL
     - 低於 80% 覆蓋率時，列出缺來源的項目並標 🟡
     - 目標：讓業者或專業使用者事後能反查每個數字的依據
@@ -130,7 +130,7 @@ disable-model-invocation: true
 3. 輕微和中等問題直接自動修正行程表（單一檔案改 `final-itinerary.md`，分日拆檔改對應的 `day-N.md`）
 4. 嚴重問題如果有明確最佳解就自動修正；如果有多個可行方案，用 `AskUserQuestion` 讓使用者選
 5. 修正完成後，顯示修改摘要（改了幾處、改了什麼）
-6. 將審查報告存到 `.claude/reports/review.md`
+6. 將審查報告存到 `review.md`
 
 ## 無問題時
 
