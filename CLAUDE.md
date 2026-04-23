@@ -31,10 +31,16 @@
 
 觸發 /backup 的所有情境：
 
-- ✓ 使用者說「儲存」「保存」「存到雲端」「commit」「存起來」「會不會不見」 → 呼叫 /backup
-- ✓ 你（Claude）剛寫完檔案、覺得「該存了」 → 呼叫 /backup，**不要自己跑 git**
-- ✓ 對話接近結束、想留一份備份 → 呼叫 /backup
-- ✓ trip 系列 skill 寫完檔後 → 呼叫 /backup，**不要自己跑 git**
+- ✅ **只有當使用者明確說**「儲存」「保存」「存到雲端」「commit」「存起來」「備份」「上傳」「會不會不見」這類詞 → 呼叫 /backup
+- ✅ Stop hook 提醒「尚未儲存」後，使用者**下一輪明確同意儲存** → 呼叫 /backup
+
+**禁止主動呼叫的情境**（會煩到使用者）：
+- ❌ Claude 自己寫完檔後**不要主動跳出來問**「要存嗎」。讓 Stop hook 去做被動提醒就好
+- ❌ trip 系列 skill 跑完後**不要自動接著跑 backup**。寫完檔就停，等使用者決定要不要存
+- ❌ 對話結束前**不要**「我幫你順便存一下」這種行為
+- ❌ 看到 git status 有 uncommitted changes **不要**主動跳出來救。Stop hook 會處理提醒
+
+核心原則：**被動提醒 + 使用者主動決定**。Claude 不要當熱心過頭的助理。
 
 **禁止使用的指令**（會改動 repo 狀態的全禁）：
 - `git commit`、`git add`
@@ -52,7 +58,7 @@
 
 理由：/backup 內部負責完整流程（commit → 推 feature branch → 切 main → merge → 推 main → 刪 feature branch → 留在 main）。手動跑 git 會繞過這個流程，導致資料卡在 feature branch、main 永遠空，使用者下次找不到。
 
-**自動觸發**：使用者只要自然語言說「儲存」「保存」「存到雲端」「commit」「存起來」「備份」「上傳」這類詞，**Claude 就要主動呼叫 backup skill**，不要等使用者打 `/backup` 指令。Slash command 是可選的，自然語言才是主要觸發方式。
+**觸發方式**：使用者**明確說**「儲存」「備份」這類詞，**或**使用者主動打 `/backup`。Claude 不要在沒被要求的時刻主動觸發。
 
 ### 使用者問起 git/branch 概念時
 

@@ -1,6 +1,6 @@
 ---
 name: backup
-description: "把目前所有未儲存的旅行檔案變更一次存到雲端（commit + push + merge to main）。當使用者說『儲存』『保存』『存到雲端』『commit』『存起來』『備份』『上傳』之類詞，或看到『尚未儲存』提示時，**自動呼叫**這個 skill。給外行人用，全程不需要懂 git。"
+description: "把目前所有未儲存的旅行檔案變更一次存到雲端（commit + push + merge to main）。**只在使用者明確說『儲存』『保存』『存到雲端』『commit』『存起來』『備份』『上傳』時觸發**，或是使用者看到「尚未儲存」提示後主動要求儲存時觸發。**不要在 Claude 自己寫完檔後主動呼叫**（那樣會煩到使用者）。給外行人用，全程不需要懂 git。"
 user-invocable: true
 ---
 
