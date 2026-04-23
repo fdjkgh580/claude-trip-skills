@@ -54,35 +54,68 @@ git status --porcelain
    - 「研究報告：景點與美食」
    - 變動雜時用「更新旅行檔案」當保底
 
-2. 執行（**全部依序**，不要跳步驟）：
+2. 執行（**全部依序**，不要跳步驟）。**重要**：必須拆成多個獨立的 bash 呼叫，**不要用 `&&` 把全部串成一行**，否則一個失敗就看不出哪步出錯，而且最後的 cleanup 失敗會把整個任務標記成失敗。
 
+   **Step A — 存當前變更**：
    ```bash
-   # 先把當前變更存到當前 branch
-   git add -A
-   git commit -m "<你寫的 commit message>"
-
-   # 偵測當前 branch
-   CURRENT=$(git rev-parse --abbrev-ref HEAD)
-
-   if [ "$CURRENT" = "main" ] || [ "$CURRENT" = "master" ]; then
-     # 已經在 main，直接 push
-     git push origin "$CURRENT"
-   else
-     # 在 feature branch：先把 feature push 上去，然後切 main 合併再推
-     git push origin "$CURRENT"
-     git checkout main 2>/dev/null || git checkout master
-     git pull origin HEAD
-     git merge --no-ff "$CURRENT" -m "整合 $CURRENT 的變更"
-     git push origin HEAD
-     # 清掉 feature branch（本機 + 遠端）
-     git branch -d "$CURRENT"
-     git push origin --delete "$CURRENT"
-   fi
+   git add -A && git commit -m "<你寫的 commit message>"
    ```
 
-3. 任一步失敗 → 告訴使用者「儲存遇到問題，{簡短說明，避免術語}」。例如 push 被擋就說「網路或權限有問題，稍後再試」。**不要暴露 git 指令、branch 名稱**。
+   **Step B — 偵測 branch 並決定路線**：
+   ```bash
+   git rev-parse --abbrev-ref HEAD
+   ```
 
-4. 最終結果：使用者的工作目錄停在 `main`，所有變更都在 main 上、雲端也是。
+   **如果輸出是 `main` 或 `master`**：直接推上去
+   ```bash
+   git push origin HEAD
+   ```
+   完成，跳到下面「成功回報」。
+
+   **否則（在 feature branch，記下名字 `<CUR>`）**：以下每一步**獨立呼叫**：
+
+   B1. 推 feature branch（讓雲端先有備份）：
+   ```bash
+   git push origin <CUR>
+   ```
+
+   B2. 切到主線：
+   ```bash
+   git checkout main 2>/dev/null || git checkout master
+   ```
+
+   B3. 拉最新主線：
+   ```bash
+   git pull origin HEAD
+   ```
+
+   B4. **把 feature 合併進主線**（這是關鍵步驟，失敗要中止並回報）：
+   ```bash
+   git merge --no-ff <CUR> -m "整合 <CUR> 的變更"
+   ```
+
+   B5. **推主線**（這也是關鍵步驟，失敗要中止並回報）：
+   ```bash
+   git push origin HEAD
+   ```
+
+   ⬆️ **到 B5 為止，使用者資料已經安全在雲端 main 上**。下面 B6 / B7 只是清理，**失敗也不要回報失敗、不要顯示錯誤訊息給使用者**，靜默跳過即可。
+
+   B6. 刪本機 feature branch（best-effort）：
+   ```bash
+   git branch -d <CUR> 2>/dev/null || true
+   ```
+
+   B7. 刪遠端 feature branch（best-effort，sandbox 的 git proxy 常回 403，**不算錯**）：
+   ```bash
+   git push origin --delete <CUR> 2>/dev/null || true
+   ```
+
+3. **失敗判斷規則**：
+   - **Step A / B4 / B5 任一失敗** → 告訴使用者「儲存遇到問題，{簡短說明，避免術語}」。**不要暴露 git 指令、branch 名稱**。
+   - **B1 / B6 / B7 失敗** → 靜默忽略，使用者不需要知道。資料已經在 main 上了。
+
+4. 最終結果：使用者的工作目錄停在 `main`，所有變更都在 main 上、雲端也是。GitHub 上可能殘留孤兒 feature branch（B7 失敗時），這不影響使用者，**不要主動提**。
 
 ### 4. 成功回報
 
