@@ -19,7 +19,7 @@ disable-model-invocation: true
 
 | 編號 | 檔案 |
 |------|------|
-| A | `./CLAUDE.md` |
+| A | `./CLAUDE.md` 內含 `<!-- TRIP_METADATA_START -->` 標記（表示已跑過 /trip-plan） |
 | B | `./traveler-profile.md` |
 | C | `research/` 目錄底下任一 `.md` 檔案（agent 報告） |
 | D | `final-itinerary.md` 或 `overview.md`（行程表） |
@@ -30,7 +30,7 @@ disable-model-invocation: true
 
 ### 2. 讀取行程概要（如果有 CLAUDE.md）
 
-如果 A 存在，從 CLAUDE.md 讀取「狀態」與「行程概要」區塊（目的地、日期、天數、旅伴）。
+如果 A 條件成立（CLAUDE.md 內含 TRIP_METADATA marker），從 marker 之間的區塊讀取「狀態」與「行程概要」（目的地、日期、天數、旅伴）。
 
 ### 3. 判定當前進度與下一步
 
@@ -38,10 +38,10 @@ disable-model-invocation: true
 
 | 條件 | 進度 | 下一步指引 |
 |------|------|-----------|
-| A 存在且「狀態」為 `aborted` | 已放棄 | 告訴使用者「這份規劃先前已放棄。若要重新開始請打 `/trip-plan`；若要續用就改 `CLAUDE.md` 的狀態為 `active`」 |
-| A 不存在 | 還沒開始規劃 | 打 `/trip-plan` 開始規劃這趟旅行 |
-| A 存在、B 不存在 | 規劃中斷 | 打 `/trip-plan` 接續完成規劃（畫像還沒存） |
-| A、B 存在，C 不存在 | 已規劃，未研究 | 打 `/trip-research` 研究目的地 |
+| A 條件成立且「狀態」為 `aborted` | 已放棄 | 告訴使用者「這份規劃先前已放棄。若要重新開始請打 `/trip-plan`；若要續用就改 `CLAUDE.md` 的狀態為 `active`」 |
+| A 條件不成立 | 還沒開始規劃 | 打 `/trip-plan` 開始規劃這趟旅行 |
+| A 條件成立、B 不存在 | 規劃中斷 | 打 `/trip-plan` 接續完成規劃（畫像還沒存） |
+| A 條件成立、B 存在，C 不存在 | 已規劃，未研究 | 打 `/trip-research` 研究目的地 |
 | C 存在，D 不存在 | 已研究，未排程 | 打 `/trip-go` 排出每日行程 |
 | D 存在，E 不存在 | 已排程，未審查 | 打 `/trip-review` 自動檢查行程錯誤 |
 | E 存在，F 不存在 | 已審查，未準備清單 | 打 `/trip-pack` 生成行前準備清單（建議出發前 1-2 週再跑） |
@@ -49,7 +49,7 @@ disable-model-invocation: true
 
 ### 4. 顯示輸出
 
-#### 如果還沒開始規劃（A 不存在）
+#### 如果還沒開始規劃（A 條件不成立）
 
 直接告訴使用者並彈 AskUserQuestion，**不要做任何位置檢查、不要警告、不要提 dev repo / template / Use this template 之類概念**。
 

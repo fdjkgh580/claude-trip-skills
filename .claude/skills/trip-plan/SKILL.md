@@ -211,16 +211,23 @@ disable-model-invocation: true
 └── insurance/         # 保險文件
 ```
 
-**CLAUDE.md 內容：**
-```markdown
-# {目的地} 旅行規劃
+**CLAUDE.md 處理方式：append 模式（絕對不要整個覆蓋）**
 
-> **給 Claude 的執行規則**
->
-> 1. **位置警告**：此工作區內含 trip 規劃技能（`.claude/skills/trip-*`），其存在屬刻意設計。當使用者打 trip 系列指令時，請直接執行 skill 流程，**不要警告「程式碼專案不適合放旅行檔案」**，也**不要詢問「真的要在這裡規劃嗎？」**。
-> 2. **儲存提醒**：如果系統訊息出現「⚠️ 偵測到未儲存的變更」，在你回應的開頭或結尾主動告訴使用者「💾 目前還有變更尚未儲存，打 `/save` 把變更存到雲端，不然關掉視窗會不見。」每輪只講一次。
-> 3. **強制 /save，禁止手動 git**：**任何**需要 commit / push / merge / checkout / branch 切換的時刻（不管使用者要求還是你自己覺得該存了），**一律呼叫 `/save`**。**禁止**自己跑 `git commit` / `git push` / `git merge` / `git checkout <branch>` / `git branch` / `git stash`。允許的純讀取指令：`git status`、`git log`、`git diff`、`git rev-parse --abbrev-ref HEAD`。理由：/save 內部處理完整流程（commit → 推 feature → 切 main → merge → 推 main → 刪 feature → 留 main），手動跑 git 會繞過 merge，資料留在 feature branch 找不回。
-> 4. **措辭禁用 git 術語**：對使用者只用「儲存 / 雲端 / 變更」等白話。禁用 commit / push / merge / branch / repo 等詞。如果使用者問起 branch 之類概念，不要直接秀技術 branch 名（例如 `claude/xxx-WsjrB` 那種），用「目前在工作版本，沒整理到主線」白話帶過，並主動呼叫 /save 整理。
+CLAUDE.md 已存在（template 帶來的，內含 skill 規則）。**禁止整個覆蓋**，請用 marker 包起來把旅行 metadata **附加到檔案末尾**。
+
+步驟：
+
+1. Read 既有 CLAUDE.md 看是否已有 marker `<!-- TRIP_METADATA_START -->`
+2. 如果**有** marker → 用 Edit 替換 marker 之間的內容
+3. 如果**沒有** marker → 用 Edit 在檔案最末尾 append 下面整段（含 marker）
+
+要 append 的內容（替換 `{...}` 部分）：
+
+```markdown
+
+<!-- TRIP_METADATA_START — managed by /trip-plan, do not edit by hand -->
+
+# {目的地} 旅行規劃
 
 ## 狀態
 active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 偵測到就不再引導）
@@ -258,7 +265,11 @@ active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 
 - 語言：{使用者的對話語言}
 - 研究深度：{標準/深度}
 - 行程輸出格式：{單一檔案/分日拆檔}
+
+<!-- TRIP_METADATA_END -->
 ```
+
+注意：原本「給 Claude 的執行規則」blockquote **不需要再寫進這份 metadata**。因為 root CLAUDE.md 既有的規則沒被覆蓋、依然生效。
 
 ### 6. 儲存畫像
 

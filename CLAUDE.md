@@ -80,4 +80,8 @@
 
 ## 規劃開始後
 
-當使用者跑完 `/trip-plan`，這份 CLAUDE.md 會被替換為**旅行專屬**版本（檔頭會保留同樣的「trip skills 在此為合法」指示，避免後續流程被誤判）。
+當使用者跑完 `/trip-plan`，trip-plan 會在這份 CLAUDE.md **末尾附加**一段旅行專屬 metadata（用 `<!-- TRIP_METADATA_START -->` 跟 `<!-- TRIP_METADATA_END -->` 標記包起來）。
+
+**重要**：上面這些 skill 規則（執行規則、強制 /save、措辭硬規則等）**永遠不會被覆蓋**，會跟旅行 metadata 共存。
+
+如果你看到本檔末尾有 `<!-- TRIP_METADATA_START -->` marker，那就是當前旅行的狀態與行程概要，請當作工作上下文使用。讀取 metadata 時請只讀 marker 之間的內容。
