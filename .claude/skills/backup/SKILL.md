@@ -1,11 +1,10 @@
 ---
-name: save
-description: "把目前所有未儲存的旅行檔案變更一次存到雲端。給外行人用，全程不需要懂 git。當使用者說「儲存」「保存」「存到雲端」「commit」之類的詞，或看到「尚未儲存」提示時，主動建議跑這個。"
+name: backup
+description: "把目前所有未儲存的旅行檔案變更一次存到雲端（commit + push + merge to main）。當使用者說『儲存』『保存』『存到雲端』『commit』『存起來』『備份』『上傳』之類詞，或看到『尚未儲存』提示時，**自動呼叫**這個 skill。給外行人用，全程不需要懂 git。"
 user-invocable: true
-disable-model-invocation: true
 ---
 
-# /save — 把旅行變更存到雲端
+# /backup — 把旅行變更存到雲端
 
 使用與使用者相同的語言回覆（預設繁體中文）。
 

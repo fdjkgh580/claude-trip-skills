@@ -21,20 +21,20 @@
 
 如果 Stop hook 注入了「⚠️ 偵測到未儲存的變更」這類系統訊息，**請在你下一輪回應的開頭或結尾**主動提醒使用者：
 
-> 💾 目前還有變更尚未儲存，打 `/save` 把變更存到雲端，不然關掉視窗會不見。
+> 💾 目前還有變更尚未儲存，打 `/backup` 把變更存到雲端，不然關掉視窗會不見。
 
 不要等使用者問，主動講。但**每輪只講一次**（不要重複嘮叨）。
 
-### 強制使用 /save：禁止手動跑 git 寫入操作
+### 強制使用 /backup：禁止手動跑 git 寫入操作
 
-**任何**需要 commit / push / merge / checkout / branch 切換的時刻，**一律呼叫 `/save` skill**，**絕對禁止**自己跑這些指令。
+**任何**需要 commit / push / merge / checkout / branch 切換的時刻，**一律呼叫 `/backup` skill**，**絕對禁止**自己跑這些指令。
 
-觸發 /save 的所有情境：
+觸發 /backup 的所有情境：
 
-- ✓ 使用者說「儲存」「保存」「存到雲端」「commit」「存起來」「會不會不見」 → 呼叫 /save
-- ✓ 你（Claude）剛寫完檔案、覺得「該存了」 → 呼叫 /save，**不要自己跑 git**
-- ✓ 對話接近結束、想留一份備份 → 呼叫 /save
-- ✓ trip 系列 skill 寫完檔後 → 呼叫 /save，**不要自己跑 git**
+- ✓ 使用者說「儲存」「保存」「存到雲端」「commit」「存起來」「會不會不見」 → 呼叫 /backup
+- ✓ 你（Claude）剛寫完檔案、覺得「該存了」 → 呼叫 /backup，**不要自己跑 git**
+- ✓ 對話接近結束、想留一份備份 → 呼叫 /backup
+- ✓ trip 系列 skill 寫完檔後 → 呼叫 /backup，**不要自己跑 git**
 
 **禁止使用的指令**（會改動 repo 狀態的全禁）：
 - `git commit`、`git add`
@@ -50,7 +50,9 @@
 - `git diff`
 - `git rev-parse --abbrev-ref HEAD`（看當前 branch 名）
 
-理由：/save 內部負責完整流程（commit → 推 feature branch → 切 main → merge → 推 main → 刪 feature branch → 留在 main）。手動跑 git 會繞過這個流程，導致資料卡在 feature branch、main 永遠空，使用者下次找不到。
+理由：/backup 內部負責完整流程（commit → 推 feature branch → 切 main → merge → 推 main → 刪 feature branch → 留在 main）。手動跑 git 會繞過這個流程，導致資料卡在 feature branch、main 永遠空，使用者下次找不到。
+
+**自動觸發**：使用者只要自然語言說「儲存」「保存」「存到雲端」「commit」「存起來」「備份」「上傳」這類詞，**Claude 就要主動呼叫 backup skill**，不要等使用者打 `/backup` 指令。Slash command 是可選的，自然語言才是主要觸發方式。
 
 ### 使用者問起 git/branch 概念時
 
@@ -58,10 +60,10 @@
 
 1. **不要直接秀技術 branch 名**（例如 `claude/create-helloworld-md-WsjrB`）
 2. 用最白話回答：「目前在工作版本，沒整理到主線」
-3. **主動呼叫 /save**：「我幫你整理一下，整理完就只剩主線一個版本，乾乾淨淨」
-4. /save 跑完後，使用者就停在 main，下次也不會再看到 branch 名
+3. **主動呼叫 /backup**：「我幫你整理一下，整理完就只剩主線一個版本，乾乾淨淨」
+4. /backup 跑完後，使用者就停在 main，下次也不會再看到 branch 名
 
-**唯一例外**：如果使用者用了「branch」「checkout」「merge」這類詞並表現出懂 git，可以正常用術語回答。但仍要主動 invoke /save 處理 merge 到 main。
+**唯一例外**：如果使用者用了「branch」「checkout」「merge」這類詞並表現出懂 git，可以正常用術語回答。但仍要主動 invoke /backup 處理 merge 到 main。
 
 ### 措辭硬規則
 
@@ -82,6 +84,6 @@
 
 當使用者跑完 `/trip-plan`，trip-plan 會在這份 CLAUDE.md **末尾附加**一段旅行專屬 metadata（用 `<!-- TRIP_METADATA_START -->` 跟 `<!-- TRIP_METADATA_END -->` 標記包起來）。
 
-**重要**：上面這些 skill 規則（執行規則、強制 /save、措辭硬規則等）**永遠不會被覆蓋**，會跟旅行 metadata 共存。
+**重要**：上面這些 skill 規則（執行規則、強制 /backup、措辭硬規則等）**永遠不會被覆蓋**，會跟旅行 metadata 共存。
 
 如果你看到本檔末尾有 `<!-- TRIP_METADATA_START -->` marker，那就是當前旅行的狀態與行程概要，請當作工作上下文使用。讀取 metadata 時請只讀 marker 之間的內容。
