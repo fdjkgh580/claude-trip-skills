@@ -1,8 +1,7 @@
 ---
 name: trip
-description: "旅行進度總管：偵測目前進度，告訴你下一步該做什麼。不知道從哪開始就打這個。"
+description: "旅行進度總管：偵測目前進度，告訴使用者下一步該做什麼，並用 AskUserQuestion 引導點擊執行。**這是整套 trip skills 的萬用入口** — 使用者只要記這一個。當使用者說以下任一觸發詞時就執行：『下一步』『接下來』『繼續』『現在要做什麼』『進度怎樣』『進度』『旅行進度』『規劃旅行』『要規劃旅行』『開始規劃』『不知道從哪開始』『trip』。也接受使用者直接打 `/trip`。不確定要跑哪個 trip-* skill 時也用這個。"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # /trip — 旅行進度總管
