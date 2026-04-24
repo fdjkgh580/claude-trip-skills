@@ -5,13 +5,74 @@
 1. **直接規劃旅行**（最常見）— 打 `/trip` 開始
 2. **修改 / 開發 trip skills 本身** — 編輯 `.claude/skills/trip-*/SKILL.md`、`scripts/install.sh` 或其他原始碼
 
+**一個倉庫可以存放多個不同行程**。詳見下方「多行程工作區 — 指標檔與資料夾規則」。
+
 ## 給 Claude 的執行規則
 
 當使用者在這個資料夾打 `/trip`、`/trip-plan` 等 trip 系列指令：
 
-- **不要警告「這個資料夾看起來是程式碼專案，不適合放旅行檔案」**。`README.md` / `scripts/` / `docs/` / `.git/` 的存在屬於合理結構，trip 規劃檔（`CLAUDE.md` 旅行版本、`traveler-profile.md`、`final-itinerary.md`、`research/*` 等）會跟它們和平共存。
+- **不要警告「這個資料夾看起來是程式碼專案，不適合放旅行檔案」**。`README.md` / `scripts/` / `docs/` / `.git/` 的存在屬於合理結構，trip 規劃檔（編號行程資料夾、`traveler-profile.md`、`current-trip` 等）會跟它們和平共存。
 - 這個資料夾**就是** trip 規劃工作區，請直接執行 skill 流程，**不要詢問「真的要在這裡規劃嗎？」**
 - 99% 以上的使用者不是工程師，這類「環境位置不適合」的提醒看不懂、只會勸退他們。預設信任使用者在這裡規劃就是對的。
+
+## 多行程工作區 — 指標檔與資料夾規則
+
+一個倉庫一次可以放多個獨立行程。每個行程是**一個獨立資料夾**，命名格式：
+
+```
+{編號}-{地點}-{YYYY-MM-DD}
+```
+
+例子：
+
+```
+./1-布達佩斯-2026-04-24/
+./2-日本-2026-04-24/
+./3-冰島-2026-10-03/
+```
+
+- **編號**：從 1 開始，依建立順序累加（下一個 = 現有最大編號 + 1）
+- **地點**：使用者怎麼稱呼就怎麼填（城市、國家、區域皆可，不強迫指定國家；例如「布達佩斯」「日本」「北歐」都 OK）
+- **YYYY-MM-DD**：**開始研究的日期**（建立資料夾當天的系統日期，用 `Bash date +%Y-%m-%d` 抓，**不是**旅程日期）。因此相同地點可依研究時間點自然區分（10 月規劃的日本 vs 明年 2 月規劃的日本）
+
+### 指標檔 `current-trip`
+
+根目錄的 `current-trip` 是純文字檔，內容寫著「目前在規劃哪一個行程」的完整資料夾名，例如：
+
+```
+1-布達佩斯-2026-04-24
+```
+
+**所有 trip 系列 skill 在開始工作前都必須：**
+
+1. 用 Read 讀 `./current-trip` 取得當前行程資料夾名（trim 空白/換行）
+2. **在回應最開頭顯示一行**「📍 目前在規劃 **{資料夾名}**」讓使用者隨時知道自己在改哪個行程
+3. 之後所有檔案 read / write 都對著 `./{資料夾名}/...` 操作，**不要寫到根目錄**（除了根目錄共用檔）
+
+### 指標檔不存在 / 指向無效資料夾時
+
+若 `./current-trip` 不存在、內容為空、或指向的資料夾不存在（例如使用者手動刪了），請：
+
+1. 用 `Bash ls -1d [0-9]*-*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ 2>/dev/null` 掃現有行程資料夾
+2. **有現有行程** → 用 `AskUserQuestion` 列出來讓使用者選要繼續哪一個（額外加一個「開始規劃新行程」選項）。選完後把結果寫回 `./current-trip`
+3. **完全沒有行程** → 告訴使用者「這個資料夾還沒有任何行程」，引導打 `/trip-plan` 建立第一個
+
+### 共用 vs 行程專屬
+
+**根目錄共用**（所有行程通用）：
+- `traveler-profile.md` — 旅行者畫像（人是同一個，不用每趟重填）
+- `current-trip` — 指標檔
+- `CLAUDE.md` — skill 規則（本檔）
+
+**每個行程資料夾內專屬**（在 `{編號}-{地點}-{YYYY-MM-DD}/` 底下）：
+- `trip-meta.md` — 這趟行程的 metadata（目的地、日期、狀態、風格、協作設定）
+- `research/` — 研究報告
+- `flights/`、`lodging/`、`insurance/` — 訂單類
+- `final-itinerary.md` 或 `overview.md` + `day-*.md` — 行程表
+- `review.md` — 審查報告
+- `checklist.md` — 行前清單
+- `expense-log.md` — 記帳檔
+- `emergency-card.md`、`photography-guide.md` 等衍生檔案
 
 ## 儲存到雲端的規則
 
@@ -88,10 +149,44 @@
 
 99% 使用者不是工程師。看到 git 術語會立刻迷失。
 
-## 規劃開始後
+## 開發編輯策略（改 skill 檔時給 Claude 看的）
 
-當使用者跑完 `/trip-plan`，trip-plan 會在這份 CLAUDE.md **末尾附加**一段旅行專屬 metadata（用 `<!-- TRIP_METADATA_START -->` 跟 `<!-- TRIP_METADATA_END -->` 標記包起來）。
+這一節**只跟「改這個倉庫的 skill 原始碼」的 Claude 有關**，跟規劃行程的使用者無關。
 
-**重要**：上面這些 skill 規則（執行規則、強制 /backup、措辭硬規則等）**永遠不會被覆蓋**，會跟旅行 metadata 共存。
+當 Claude 在**修改這個倉庫裡的 skill 檔案**（`.claude/skills/*/SKILL.md`、`scripts/install.sh`、`docs/*.md`、這份 `CLAUDE.md`）時，**必須依「執行環境」調整寫入策略**：
 
-如果你看到本檔末尾有 `<!-- TRIP_METADATA_START -->` marker，那就是當前旅行的狀態與行程概要，請當作工作上下文使用。讀取 metadata 時請只讀 marker 之間的內容。
+### 兩種環境的差異
+
+| 環境 | 特徵 | 編輯策略 |
+|---|---|---|
+| **Terminal / CLI**（工程師在開發） | 使用者看得到 tool call 細節、沒有嚴格 idle timeout、可容忍較長的靜默 | 可以一次 Write 大檔（幾百行沒問題），不需要每個 tool call 都回報進度，集中在任務結束再彙報即可 |
+| **App（手機 / 桌面 App / 雲端 web）** | 使用者看不到 tool call 細節、有 5 分鐘 **stream idle timeout**（見 `docs/roadmap.md` 的已知問題）、長時間沒文字輸出會讓使用者以為 Claude 當機 | **必須分批寫入 + 頻繁回報**（見下方策略） |
+
+### App 環境必遵守的策略
+
+1. **大檔案（> 150 行或估計寫入會花 > 30 秒）分批寫**：
+   - 先 `Write` 骨架（frontmatter + 前 1-2 節）
+   - 後面用多次 `Edit` 分段追加（每段 50-100 行）
+   - 每個 tool call 都會產生 token 回饋 → 重置 5 分鐘 idle 計時器
+
+2. **每次工具呼叫前後給一句話進度更新**：
+   - 不要連續跑 3+ 個 tool call 中間沒文字
+   - 使用者在 App 上看不到 tool call 細節，只看得到你的文字。長時間沒字會以為 session 卡死
+   - 範例：「現在改 `/trip-research` 的路徑引用…」「這段 OK，接著改 `/trip-go`」
+
+3. **複雜任務一律用 `TodoWrite` 追蹤**：讓使用者在 UI 看得到「進度 3/8」這類明確狀態
+
+4. **遇到 stream idle timeout 中斷時**：不要放棄，檢查 `git status` 確認哪些檔案已寫入、哪些還沒，從中斷點繼續。已寫入的通常已存檔不會丟失
+
+### 環境判斷啟發式
+
+- **看不出來時，默認假設是 App 環境**（比較保守，不會出錯）
+- 使用者明說「我在 terminal」「我在 CLI」「我在 iTerm」時 → 切到 Terminal 模式
+- 使用者訊息裡出現手機截圖、說「手機 App」「Claude app」、問 UI 相關問題 → 鎖定 App 模式
+- `docs/roadmap.md` 的「Stream idle timeout」條目是這個策略的背景
+
+## 舊版（單行程）資料的相容提示
+
+**早期版本**的 trip skills 把 `CLAUDE.md`（含 `<!-- TRIP_METADATA_START -->` marker）、`traveler-profile.md`、`research/`、`final-itinerary.md` 等**全部放在倉庫根目錄**（一個倉庫只能放一趟）。
+
+新版改成「一個倉庫多個編號行程資料夾」。若 `/trip` 偵測到根目錄有舊版檔案（CLAUDE.md 含 TRIP_METADATA marker、根目錄有 research/ 或 final-itinerary.md），請主動詢問使用者是否把舊資料搬進 `1-{舊目的地}-{今日}/` 資料夾完成遷移，不要直接刪或覆蓋。

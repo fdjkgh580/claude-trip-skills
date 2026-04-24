@@ -8,7 +8,9 @@ user-invocable: true
 
 使用與使用者相同的語言回覆（預設繁體中文）。
 
-對 trip 規劃使用者來說，雲端 sandbox 是短暫的，session 結束未存的變更就消失。這個 skill 把所有變更一次存到雲端 GitHub repo。
+對 trip 規劃使用者來說，雲端 sandbox 是短暫的，session 結束未存的變更就消失。這個 skill 把**整個倉庫**（含根目錄檔案、所有行程資料夾）的變更一次存到雲端 GitHub repo。
+
+**多行程也是一次存**：這個倉庫可能有多個行程資料夾（`1-布達佩斯-2026-04-24/`、`2-日本-2026-10-03/`…）+ 根目錄檔案（`current-trip`、`traveler-profile.md` 等）。`/backup` 用 `git add -A` 把**全部**一次打包存起來，不分行程。使用者不需要選「要存哪一個行程」。
 
 ## 措辭規則（重要）
 
