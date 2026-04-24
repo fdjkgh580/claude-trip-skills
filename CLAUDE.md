@@ -149,18 +149,21 @@
 
 99% 使用者不是工程師。看到 git 術語會立刻迷失。
 
-## 開發編輯策略（改 skill 檔時給 Claude 看的）
+## 環境感知 — 分批寫入 + 頻繁進度回報
 
-這一節**只跟「改這個倉庫的 skill 原始碼」的 Claude 有關**，跟規劃行程的使用者無關。
+這一節**同時適用兩種情境**：
 
-當 Claude 在**修改這個倉庫裡的 skill 檔案**（`.claude/skills/*/SKILL.md`、`scripts/install.sh`、`docs/*.md`、這份 `CLAUDE.md`）時，**必須依「執行環境」調整寫入策略**：
+1. **改這個倉庫的 skill 原始碼**（工程師在開發 skill）
+2. **執行 trip 系列 skill**（一般使用者在規劃行程） — 例如 `/trip-research` 派多個 agent、`/trip-go` 生成完整行程表、`/trip-pack` 列出每日清單，這些都是長時間 + 大檔寫入的操作
+
+兩種情境撞到的是**同一個底層問題**：Claude 在後台做事，但使用者（尤其手機 / App 環境）看不到 tool call 細節，長時間沒文字就以為當機、或觸發 stream idle timeout。
 
 ### 兩種環境的差異
 
-| 環境 | 特徵 | 編輯策略 |
+| 環境 | 特徵 | 策略 |
 |---|---|---|
-| **Terminal / CLI**（工程師在開發） | 使用者看得到 tool call 細節、沒有嚴格 idle timeout、可容忍較長的靜默 | 可以一次 Write 大檔（幾百行沒問題），不需要每個 tool call 都回報進度，集中在任務結束再彙報即可 |
-| **App（手機 / 桌面 App / 雲端 web）** | 使用者看不到 tool call 細節、有 5 分鐘 **stream idle timeout**（見 `docs/roadmap.md` 的已知問題）、長時間沒文字輸出會讓使用者以為 Claude 當機 | **必須分批寫入 + 頻繁回報**（見下方策略） |
+| **Terminal / CLI**（工程師開發、或老手使用者） | 看得到 tool call 細節、沒有嚴格 idle timeout、可容忍較長的靜默 | 可以一次 Write 大檔（幾百行沒問題），不需要每個 tool call 都回報進度，任務結束再彙報即可 |
+| **App（手機 / 桌面 App / 雲端 web）** | 看不到 tool call 細節、有 5 分鐘 **stream idle timeout**（見 `docs/roadmap.md` 的已知問題）、長時間沒文字輸出會讓使用者以為 Claude 當機 | **必須分批寫入 + 頻繁回報**（見下方策略） |
 
 ### App 環境必遵守的策略
 
@@ -168,13 +171,15 @@
    - 先 `Write` 骨架（frontmatter + 前 1-2 節）
    - 後面用多次 `Edit` 分段追加（每段 50-100 行）
    - 每個 tool call 都會產生 token 回饋 → 重置 5 分鐘 idle 計時器
+   - 適用場景：改 skill 的 SKILL.md、`/trip-go` 寫 final-itinerary、`/trip-pack` 寫 checklist
 
 2. **每次工具呼叫前後給一句話進度更新**：
    - 不要連續跑 3+ 個 tool call 中間沒文字
    - 使用者在 App 上看不到 tool call 細節，只看得到你的文字。長時間沒字會以為 session 卡死
-   - 範例：「現在改 `/trip-research` 的路徑引用…」「這段 OK，接著改 `/trip-go`」
+   - 範例（開發中）：「現在改 `/trip-research` 的路徑引用…」「這段 OK，接著改 `/trip-go`」
+   - 範例（使用者跑 skill）：「派 agent 去研究美食了，預計 3 分鐘」「agent A 回來了，正在整理要點」「行程表寫到第 3 天」
 
-3. **複雜任務一律用 `TodoWrite` 追蹤**：讓使用者在 UI 看得到「進度 3/8」這類明確狀態
+3. **複雜任務一律用 `TodoWrite` 追蹤**：讓使用者在 UI 看得到「進度 3/8」這類明確狀態。`/trip-research`、`/trip-go` 派 agent 或分段寫檔時特別有用
 
 4. **遇到 stream idle timeout 中斷時**：不要放棄，檢查 `git status` 確認哪些檔案已寫入、哪些還沒，從中斷點繼續。已寫入的通常已存檔不會丟失
 
