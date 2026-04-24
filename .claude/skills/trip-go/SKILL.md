@@ -11,11 +11,21 @@ disable-model-invocation: true
 
 ## 前置檢查
 
-1. 讀取 `CLAUDE.md` 取得行程概要
-2. 讀取 `./traveler-profile.md` 取得旅行者畫像
-3. 讀取 `research/index.md` 確認研究報告存在
-4. 讀取所有 agent 報告
+### 0. 解析當前行程資料夾（永遠先做）
+
+1. 用 Read 讀 `./current-trip` 取得當前行程資料夾名，令 `$TRIP` = 該資料夾名
+2. 若 `./current-trip` 不存在 / 為空 / 指向不存在的資料夾 → 告訴使用者先打 `/trip`
+3. **在回應最開頭顯示一行**「📍 目前在規劃 **{$TRIP}**」
+
+### 1. 讀取檔案
+
+1. 讀取 `./$TRIP/trip-meta.md` 取得行程概要
+2. 讀取**根目錄** `./traveler-profile.md` 取得旅行者畫像
+3. 讀取 `./$TRIP/research/index.md` 確認研究報告存在
+4. 讀取 `./$TRIP/research/` 底下所有 agent 報告
 5. 如果研究報告不存在，提醒使用者先執行 `/trip-research`
+
+**重要**：以下所有檔案路徑（`final-itinerary.md`、`overview.md`、`day-*.md`、`expense-log.md`、`photography-guide.md`、`food-guide.md`、`outdoor-guide.md`）都放在 `./$TRIP/` 底下，不是根目錄。
 
 ## 行程排序原則
 
@@ -43,17 +53,17 @@ disable-model-invocation: true
 
 ### 單一檔案模式（預設）
 
-所有天數寫入 `final-itinerary.md`。
+所有天數寫入 `./$TRIP/final-itinerary.md`。
 
 ### 分日拆檔模式
 
-產出以下檔案結構：
+產出以下檔案結構（都放在 `./$TRIP/` 底下）：
 ```
-overview.md          # 行程總覽（日期+城市+主題+預算摘要）
-day-1.md             # 第 1 天完整行程
-day-2.md             # 第 2 天完整行程
+./$TRIP/overview.md          # 行程總覽（日期+城市+主題+預算摘要）
+./$TRIP/day-1.md             # 第 1 天完整行程
+./$TRIP/day-2.md             # 第 2 天完整行程
 ...
-day-N.md
+./$TRIP/day-N.md
 ```
 
 N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/2 出發、4/10 回到家的行程，就是 day-1.md（4/2）到 day-9.md（4/10）。
@@ -70,10 +80,10 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 > 行程已出，後續隨時可以調整。如果之後想要產 HTML 版（傳給家人朋友看、手機方便讀、列印 PDF），跟我說「幫我出 HTML」就好。
 
-**當使用者說「出 HTML」「產網頁版」「給我 HTML 給家人看」這類訊號時**，用下方規範把當前 Markdown 轉 HTML：
+**當使用者說「出 HTML」「產網頁版」「給我 HTML 給家人看」這類訊號時**，用下方規範把當前 Markdown 轉 HTML（都寫到 `./$TRIP/` 底下）：
 
-- 單一檔案 → `final-itinerary.html`
-- 分日拆檔 → `overview.html` + `day-N.html`（每天一份）
+- 單一檔案 → `./$TRIP/final-itinerary.html`
+- 分日拆檔 → `./$TRIP/overview.html` + `./$TRIP/day-N.html`（每天一份）
 
 ### HTML 產出規範（使用者要求時才用）
 
@@ -217,14 +227,14 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 
 | 核心興趣 | 產出檔案 | 內容 |
 |----------|---------|------|
-| 攝影 | `photography-guide.md` | 拍攝心態轉變、各器材的作品感用法、光線追蹤策略 |
-| 美食 | `food-guide.md` | 點餐技巧、當地飲食文化禮儀、預約教學、市場攻略 |
-| 戶外 | `outdoor-guide.md` | 裝備檢查、天氣應對、體力分配、安全須知 |
+| 攝影 | `./$TRIP/photography-guide.md` | 拍攝心態轉變、各器材的作品感用法、光線追蹤策略 |
+| 美食 | `./$TRIP/food-guide.md` | 點餐技巧、當地飲食文化禮儀、預約教學、市場攻略 |
+| 戶外 | `./$TRIP/outdoor-guide.md` | 裝備檢查、天氣應對、體力分配、安全須知 |
 | 其他 | 視情況決定是否需要 | |
 
 ## 旅途記帳系統
 
-行程表產出完成後，額外生成 `expense-log.md`，由 Claude 在旅途對話中自動維護。
+行程表產出完成後，額外生成 `./$TRIP/expense-log.md`，由 Claude 在旅途對話中自動維護。
 
 ### 記帳檔初始格式
 
@@ -264,21 +274,21 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 （全程總計統一換算為 TWD，方便跨幣別加總。匯率以檔案開頭的參考匯率計算）
 ```
 
-### 旅途模式（寫入 CLAUDE.md）
+### 旅途模式（寫入當前行程的 trip-meta.md）
 
-**追加**到現有 CLAUDE.md（不要覆蓋原有內容），只放檔案指標：
+**追加**到 `./$TRIP/trip-meta.md`（不要覆蓋原有內容，用 Edit 在檔案末尾追加一段）：
 
 ```markdown
 ## 旅途模式
 
-旅行期間 {日期範圍}。新對話時先讀今天的行程，主動顯示今天城市和接下來的行程。
+旅行期間 {日期範圍}。新對話時，Claude 先 Read `./current-trip` 確定當前行程，然後讀今天的行程，主動顯示今天城市和接下來的行程。
 
-關鍵檔案：
+關鍵檔案（都在 `./$TRIP/` 底下，除了 traveler-profile）：
 - 行程表：`final-itinerary.md`（或 `overview.md` + `day-*.md`）
 - 行程網頁版：需要時跟 Claude 說「幫我出 HTML」才會產
 - 記帳檔：`expense-log.md` — 使用者提到花費就更新這個檔案
 - 研究報告：`research/` 目錄下的 agent 報告
-- 旅行者畫像：`./traveler-profile.md`
+- 旅行者畫像：`../traveler-profile.md`（根目錄共用）
 ```
 
 ## 完成後
@@ -290,8 +300,8 @@ N 代表旅行的第幾天（從出發日算起，包含交通日）。例如 4/
 5. 問使用者有沒有想調整的地方
 
 如果使用者要調整：
-- 單一檔案模式：直接修改 `final-itinerary.md`
-- 分日拆檔模式：修改對應的 `day-N.md`，如有影響 `overview.md` 也一起更新
+- 單一檔案模式：直接修改 `./$TRIP/final-itinerary.md`
+- 分日拆檔模式：修改對應的 `./$TRIP/day-N.md`，如有影響 `./$TRIP/overview.md` 也一起更新
 - 若之前已經產過 HTML，告訴使用者「HTML 不會自動同步，要再說一聲才會重產」
 
 改完說明改了什麼。

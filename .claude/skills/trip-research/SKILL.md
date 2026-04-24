@@ -11,9 +11,19 @@ disable-model-invocation: true
 
 ## 前置檢查
 
-1. 讀取當前目錄的 `CLAUDE.md`，確認目的地、日期、旅行風格等資訊
-2. 讀取 `./traveler-profile.md`，取得旅行者畫像
+### 0. 解析當前行程資料夾（永遠先做）
+
+1. 用 Read 讀 `./current-trip` 取得當前行程資料夾名，令 `$TRIP` = 該資料夾名（trim 空白 / 換行）
+2. 若 `./current-trip` 不存在、為空、或指向不存在的資料夾 → 告訴使用者先打 `/trip`（由 /trip 解決指標檔問題）；不要自行建立或猜測
+3. **在回應最開頭顯示一行**「📍 目前在規劃 **{$TRIP}**」讓使用者知道正在改哪個行程
+
+### 1. 讀取行程檔案
+
+1. 讀取 `./$TRIP/trip-meta.md`，確認目的地、日期、旅行風格等資訊
+2. 讀取**根目錄**的 `./traveler-profile.md`，取得旅行者畫像（畫像所有行程共用）
 3. 如果任一檔案不存在，提醒使用者先執行 `/trip-plan`
+
+**重要**：以下所有 `research/...` 路徑都是指 `./$TRIP/research/...`，別寫到根目錄。
 
 ## 第一階段：並行起跑（讓使用者第一眼就進入旅遊話題）
 
@@ -64,7 +74,7 @@ disable-model-invocation: true
 
 若選「6 個月內到期」或「已過期 / 還沒辦」，不要當場警告時程（避免打斷優先主題討論），等 gate 回來後在紅黃綠燈一併講。若選「幫我確認」遲遲無法確認，直接記「待確認」往下走。
 
-補完後寫回 `traveler-profile.md`。
+補完後寫回**根目錄** `./traveler-profile.md`（不是寫進 `$TRIP/`）。
 
 ### 派出 gate agent
 
@@ -79,11 +89,11 @@ Prompt 要求：
 - 每個結論都必須附資料來源 URL（使用者國籍的外交部 / 領事局、各國官方網站）
 - **來源必須是不同 root domain**：例如官方 `.gov` 網站 + 一個可靠的第二來源（旅遊社群、權威媒體）。若兩個來源不一致，標「⚠️ 資訊分歧，建議再次確認」
 
-報告存為 `research/agent-0-gate.md`。
+報告存為 `./$TRIP/research/agent-0-gate.md`。
 
 ### 讀取結果後的紅黃綠燈判斷
 
-從 CLAUDE.md 取出發日期，算「距出發天數」。從畫像取「護照狀態」與「國籍」。
+從 `./$TRIP/trip-meta.md` 取出發日期，算「距出發天數」。從畫像取「護照狀態」與「國籍」。
 
 護照辦理 / 換發時程依國籍不同（中華民國：一般件 10 個工作天、急件 3 個工作天；其他國籍請用 WebSearch 確認該國護照局時程）。
 
@@ -102,7 +112,7 @@ Prompt 要求：
 | 改期（推薦） | 請使用者給新日期，重新計算後再判斷 |
 | 改目的地（免簽或容易辦的） | 回到 /trip-plan 重選目的地 |
 | 機票已訂，辦急件 | 附急件辦理窗口、所需文件清單、護照急件同步辦法；繼續後續研究，但在報告開頭標紅字警告 |
-| 取消這次規劃 | 結束流程，並把 `CLAUDE.md` 的「狀態」欄位改為 `aborted` |
+| 取消這次規劃 | 結束流程，並把 `./$TRIP/trip-meta.md` 的「狀態」欄位改為 `aborted` |
 
 如果使用者把四個選項都跳過、或回覆「幫我決定」「你決定就好」這類訊號，依下列規則自動選（並在對話中告知「根據你的 X，我替你選了 Y，可後續再改」）：
 
@@ -111,7 +121,7 @@ Prompt 要求：
 
 ## 第二階段：定義研究清單（NEW，派 agent 前必做）
 
-**在派主體研究 agent 之前，先產出一份完整的「研究項目清單」，放在 `research/research-checklist.md`**。用途：
+**在派主體研究 agent 之前，先產出一份完整的「研究項目清單」，放在 `./$TRIP/research/research-checklist.md`**。用途：
 
 1. 派 agent 時，明確告訴每個 agent 他負責清單中的哪幾項
 2. agent 全部回報後，主 Claude **逐項審核清單**，確認每一項都有被回答
@@ -291,18 +301,20 @@ Prompt 要求：
    - 掃每份 agent 報告，計算「關鍵數字後 100 字內是否有 URL」的比率
    - 低於 80% 時，標紅提醒使用者哪些項目缺來源
 
-回收結果存為 `research/research-checklist.md`（覆蓋原本的空白清單）。
+回收結果存為 `./$TRIP/research/research-checklist.md`（覆蓋原本的空白清單）。
 
 ## 報告儲存
 
-每份 agent 報告存到 `research/` 目錄：
+每份 agent 報告存到 `./$TRIP/research/` 目錄：
 - 前置調查：`agent-0-gate.md`（一律有）
 - 研究清單：`research-checklist.md`（派 agent 前建立、回收後更新）
 - 標準方案：`agent-A.md`、`agent-B.md`
 - 深度方案：`agent-R1.md` ~ `agent-R6.md`
 - 補派（如有）：`agent-patch-{編號}.md`
 
-建立或更新 `research/index.md`，列出所有報告的主題和連結。
+建立或更新 `./$TRIP/research/index.md`，列出所有報告的主題和連結。
+
+**派 agent 時記得**：每個 agent 的 prompt 裡要明確告訴 agent 報告寫到 `./$TRIP/research/agent-X.md`（把 `$TRIP` 展開成實際資料夾名），agent 沒辦法自己讀 `current-trip` 指標檔。
 
 ## 研究完成後
 
