@@ -1,8 +1,7 @@
 ---
 name: trip-review
-description: "旅行規劃第四步：自動審查行程表，找出錯誤並修正"
+description: "旅行規劃第四步（審查）：自動審查行程表、找出錯誤並修正。**僅在使用者打 /trip-review，或從 /trip 流程串接進來時執行**。"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # /trip-review — 行程品質審查

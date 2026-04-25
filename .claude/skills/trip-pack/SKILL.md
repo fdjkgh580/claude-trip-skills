@@ -1,8 +1,7 @@
 ---
 name: trip-pack
-description: "旅行規劃第五步：生成分階段行前準備清單"
+description: "旅行規劃第五步（行前準備）：生成分階段行前準備清單。**僅在使用者打 /trip-pack，或從 /trip 流程串接進來時執行**。建議出發前 1-2 週執行最合適。"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # /trip-pack — 行前準備清單

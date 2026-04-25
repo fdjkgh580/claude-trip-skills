@@ -37,9 +37,18 @@ user-invocable: true
 - 選了「🆕 開始規劃新行程」→ 直接跑 `/trip-plan`，skill 結束
 
 **且沒有任何現有行程資料夾** → 代表這是**全新工作區、還沒規劃過任何行程**。
-- 檢查是否有**舊版**單行程殘留（根目錄有 `CLAUDE.md` 含 `<!-- TRIP_METADATA_START -->` marker、或根目錄有 `research/`、`final-itinerary.md`）
-- 有舊版殘留 → 告訴使用者「偵測到舊版格式的旅行檔案放在根目錄，新版改成每個行程一個獨立資料夾。要幫你搬進 `1-{舊目的地}-{今日}/` 嗎？」用 AskUserQuestion 問是否要搬遷，答「要」就把舊檔搬進新資料夾並寫指標檔
-- 沒有舊版殘留 → 進下面「還沒開始規劃」流程
+
+**靜默**執行舊版殘留偵測（不要跟使用者解釋在檢查什麼，見根目錄 CLAUDE.md「內部檢查必須靜默執行」）。用這個精確命令避免誤判：
+
+```bash
+grep -q '<!-- TRIP_METADATA_START -->' CLAUDE.md 2>/dev/null && echo HAS_MARKER
+[ -d research ] && [ -f final-itinerary.md ] && echo HAS_LEGACY_FILES
+```
+
+⚠️ **不要**只用 `grep TRIP_METADATA_START CLAUDE.md`（會誤中文件裡提到這個字串的說明段落）。必須帶 `<!-- ... -->` HTML 註解形式才是真 marker。
+
+- 上述任一回傳 `HAS_MARKER` 或 `HAS_LEGACY_FILES` → 視為有舊版殘留 → 告訴使用者「偵測到舊版格式的旅行檔案放在根目錄，新版改成每個行程一個獨立資料夾。要幫你搬進 `1-{舊目的地}-{今日}/` 嗎？」用 AskUserQuestion 問是否要搬遷，答「要」就把舊檔搬進新資料夾並寫指標檔
+- 都沒有 → 進下面「還沒開始規劃」流程。**不要跟使用者講「我檢查過 X Y Z 都沒有」**，靜默跳過
 
 ### 2. 讀取當前行程的進度
 

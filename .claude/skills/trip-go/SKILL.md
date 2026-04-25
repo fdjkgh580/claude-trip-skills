@@ -1,8 +1,7 @@
 ---
 name: trip-go
-description: "旅行規劃第三步：根據研究報告生成每日詳細行程表"
+description: "旅行規劃第三步（排程）：根據研究報告生成每日詳細行程表、建立記帳檔、切到旅途模式。**僅在使用者打 /trip-go，或從 /trip 流程串接進來時執行**。"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # /trip-go — 生成每日行程表
