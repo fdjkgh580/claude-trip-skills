@@ -1,6 +1,6 @@
 ---
 name: trip-review
-description: "旅行規劃第四步（審查）：自動審查行程表、找出錯誤並修正。**僅在使用者打 /trip-review，或從 /trip 流程串接進來時執行**。"
+description: "旅行規劃第四步（審查）：自動審查行程表、找出錯誤並修正。觸發條件：(a) 使用者打 /trip-review、(b) 從 /trip 流程串接進來、(c) 使用者說以下**特定意圖自然語言**：『檢查行程』『審查行程』『找看看有沒有錯』『檢查一下行程』。**通用詞如『下一步』『繼續』『接下來』請走 /trip 讓 dispatcher 判斷進度，不要直接執行本 skill**。"
 user-invocable: true
 ---
 
@@ -154,4 +154,6 @@ user-invocable: true
 用 `TaskUpdate` 更新任務狀態：
 
 - 開始時：把「審查行程」設為 `in_progress`（activeForm: 「審查行程中」）
-- 完成時：把「審查行程」設為 `completed`，告訴使用者下一步輸入 `/trip-pack`（建議出發前 1-2 週再跑）
+- 完成時：把「審查行程」設為 `completed`，告訴使用者「跟我說『下一步』就會繼續（或直接打 `/trip-pack`），建議出發前 1-2 週再跑」
+
+  ⚠️ **不要**在收尾推使用者用 `/trip-pack` 自己的特定意圖詞（例如「行前清單」），那會繞過 `/trip` 的進度偵測。讓使用者統一用「下一步」走 dispatcher 最安全。
