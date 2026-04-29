@@ -298,6 +298,7 @@ active（active / aborted；aborted 表示使用者已放棄此規劃，`/trip` 
 - 語言：{使用者的對話語言}
 - 研究深度：{標準/深度}
 - 行程輸出格式：{單一檔案/分日拆檔}
+- Claude 模式：尚未設定（trip-research 第一次跑時詢問。值：no-agent / multi-agent / 尚未設定）
 ```
 
 **不要**在根目錄 CLAUDE.md 附加 `<!-- TRIP_METADATA_START -->` 區塊 — 那是舊版的作法。新版所有 metadata 都在 `./$TRIP/trip-meta.md` 裡，根目錄 CLAUDE.md 只保留 skill 規則。
