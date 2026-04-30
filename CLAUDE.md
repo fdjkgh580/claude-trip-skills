@@ -90,7 +90,7 @@
 
 ### 強制使用 /backup：禁止手動跑 git 寫入操作
 
-**任何**需要 commit / push / merge / checkout / branch 切換的時刻，**一律呼叫 `/backup` skill**，**絕對禁止**自己跑這些指令。
+**預設**：任何需要 commit / push / merge / checkout / branch 切換的時刻，**一律呼叫 `/backup` skill**，不要自己跑這些指令。（例外見下方「開發者明確下指令時放行單次操作」。）
 
 觸發 /backup 的所有情境：
 
@@ -105,7 +105,7 @@
 
 核心原則：**被動提醒 + 使用者主動決定**。Claude 不要當熱心過頭的助理。
 
-**禁止使用的指令**（會改動 repo 狀態的全禁）：
+**預設禁止使用的指令**（會改動 repo 狀態）：
 - `git commit`、`git add`
 - `git push`
 - `git merge`
@@ -113,15 +113,38 @@
 - `git branch <new>`、`git branch -d`
 - `git stash`、`git rebase`
 
-**唯一允許自己跑**：純讀取的 git 指令（不改狀態）：
+**永遠允許自己跑**：純讀取的 git 指令（不改狀態）：
 - `git status`
 - `git log`
 - `git diff`
 - `git rev-parse --abbrev-ref HEAD`（看當前 branch 名）
 
-理由：/backup 內部負責完整流程（commit → 推 feature branch → 切 main → merge → 推 main → 刪 feature branch → 留在 main）。手動跑 git 會繞過這個流程，導致資料卡在 feature branch、main 永遠空，使用者下次找不到。
+理由：/backup 內部負責完整流程（commit → 推 feature branch → 切 main → merge → 推 main → 刪 feature branch → 留在 main）。手動跑 git 會繞過這個流程，導致資料卡在 feature branch、main 永遠空，一般使用者下次找不到。
 
 **觸發方式**：使用者**明確說**「儲存」「備份」這類詞，**或**使用者主動打 `/backup`。Claude 不要在沒被要求的時刻主動觸發。
+
+#### 例外：開發者明確下指令時放行單次操作
+
+預設鎖是為了保護**非工程師的旅行規劃使用者**。當使用者展現出懂 git、且**明確下指令**要求某個寫入操作時，可以直接執行該指令，不必硬走 /backup。
+
+**判斷門檻（必須同時滿足）**：
+
+1. **祈使句 + 明確動作**：使用者說「切到 main」「merge xxx 到 yyy」「刪掉 branch foo」「commit 這個」「push 一下」這類**直接命令**
+2. **使用 git 術語**：訊息裡有 `branch` / `checkout` / `merge` / `commit` / `push` / `rebase` / `stash` 這類詞，代表使用者懂在做什麼
+3. **目標明確**：操作對象（哪個 branch、哪個 commit）清楚，不用猜
+
+**不算授權的情境**（仍要走預設流程）：
+
+- ❌ 疑問句：「我在哪個 branch？」「要不要 merge？」 → 只回答，不執行
+- ❌ 描述句：「這個 branch 怪怪的」「main 好像舊了」 → 不算指令
+- ❌ 含糊的「整理一下」「處理掉」 → 走 /backup
+- ❌ 使用者沒用 git 術語、用白話描述（「存起來」「整理乾淨」） → 走 /backup
+
+**執行原則**：
+
+- **只做使用者明確指定的那一步**，不主動串接其他操作（例如「切到 main」就只 switch，不順便 pull、不順便刪舊 branch）
+- 執行前用一句話確認要做什麼（「OK，切到 main，目前的 branch 不刪先留著」）
+- 破壞性操作（`branch -D`、`reset --hard`、`push --force`）即使被授權也要再確認一次
 
 ### 使用者問起 git/branch 概念時
 
