@@ -55,10 +55,12 @@ user-invocable: true
 2. **詢問範例**（用最白話、不要用「sub-agent / 配額 / token」這類術語）：
 
    題目：「這趟旅行第一次研究資料。你 Claude 訂閱是哪個？」
-   選項（單選 4 個內）：
+   選項（單選）：
    - **Pro 版**：我自己慢慢跑（約 8-10 分鐘，比較省）
    - **Max 版**：派幾個小幫手平行做（約 3 分鐘，比較快但會吃較多配額）
-   - 不知道（我幫你猜）→ 預設選 Pro 版（保守不會爆配額）
+   - **Other**（讓使用者自己打字 — 例如「我用 API」「我有別的訂閱」）
+
+   ⚠️ **不要加「不知道（我幫你猜）」這種選項** — 因為 Claude 沒辦法從別處得知訂閱，「猜」實際上只能預設 Pro，等於跟直接選 Pro 一樣，是冗餘選項。
 
 3. **寫回 trip-meta.md**：用 Edit 把「Claude 模式」欄位更新為 `no-agent` 或 `multi-agent`。
 
@@ -68,21 +70,62 @@ user-invocable: true
 
 ### No-agent mode 流程（主 Claude 自己跑、不用 Task tool）
 
-**核心理念**：把原本派給 sub-agent 的清單，主 Claude 在主執行緒**連續做**。每完成一個清單區段就 Edit 寫到 `./$TRIP/research/agent-X.md`（**檔名 / 格式跟 multi-agent mode 完全一致**，方便 trip-go 後續讀）。
+**核心理念**：把原本派給 sub-agent 的清單，主 Claude 在主執行緒**多輪迭代地做**。每完成一個清單區段就 Edit 寫到 `./$TRIP/research/agent-X.md`（**檔名 / 格式跟 multi-agent mode 完全一致**，方便 trip-go 後續讀）。
 
-執行步驟：
+> ⚠️ **關鍵紀律**：Pro mode 也要**多輪 + 持久化**！主 Claude 一口氣跑 30 次搜尋會撞 idle timeout、context 也會爆。**每批處理 5-6 項 → 寫檔 → 講進度 → 下一批**才是正解。
 
-1. **gate 階段（簽證 / 護照 / 保險）**：主 Claude 自己連續 WebSearch（不用 Task tool）。一邊搜一邊用 Edit 寫到 `./$TRIP/research/agent-0-gate.md`。每完成一塊講一句進度。
-2. **跟使用者收集優先主題 + 紅黃綠燈判斷**：跟 multi-agent 流程一樣。
-3. **寫 research-checklist.md**：跟 multi-agent 流程一樣。
-4. **逐個清單區段研究**（核心差異）：
-   - 不派 sub-agent
-   - 主 Claude 按 `research-checklist.md` 順序，每次處理 1 個區段（A 體驗 / B 飲食 / C 交通...），用 5-8 次 WebSearch（不要爆預算）
-   - **每完成 1 個區段就 Edit 寫到 `./$TRIP/research/agent-{區段}.md`**（例如 `agent-A.md` / `agent-B.md`）
-   - **每寫完 1 個區段講一句進度**（「A 體驗區段 done，剩 B/C/D/E/F/G/H」）
-   - **不要一口氣搜 30 次再一次寫檔** — 會撞 idle timeout 或 main context 爆滿
-5. **回收 + 完成度檢查**：跟 multi-agent 流程一樣。但因為主 Claude 全程在線，幾乎不會有「失敗 agent」要重派的情況；改檢查的是「**搜尋預算耗盡的區段**」（標 `⚠️ 因搜尋預算耗盡未深查`）。
-6. **預算注意**：No-agent mode 因為主 Claude 自己跑，每次 WebSearch 結果都進主 context。**清單超過 25 項時主 context 會吃緊**，建議使用者改走 Multi-agent mode（提示：「研究項目較多，主 Claude 自己跑可能不夠用，要改派 sub-agent 嗎？」）。
+### 1. 算總批數（事前規劃，類比 Multi-agent 的 agent 總數）
+
+從 `research-checklist.md` 算有效項數，每批 5-6 項：
+
+```
+batch_count = ceil(有效項數 / 5)              # 每批平均 5 項
+```
+
+範例：清單 38 項 → 估 8 批。
+
+### 2. 寫 dispatch-plan.md（持久化 — 跟 Multi-agent 用同一個檔）
+
+```markdown
+# 派送計畫 — {目的地}
+
+> Mode：no-agent（Pro，主 Claude 自己跑）
+> 預估批數：{batch_count}
+> 目前批次：{current_batch} / {batch_count}+
+
+## 批次清單
+
+| 批號 | 負責清單項 | 狀態 | 報告檔 |
+|---|---|---|---|
+| 1 | A1-A5 | pending | `agent-A.md` |
+| 2 | A6-A10 | pending | `agent-A.md` (續) |
+| 3 | B1-B5 | pending | `agent-B.md` |
+| ... | ... | ... | ... |
+```
+
+### 3. 跑批次
+
+| 步驟 | 做什麼 |
+|---|---|
+| 第 1 批前 | dispatch-plan.md 該批 status: pending → running，講「開始第 1 批」 |
+| 跑第 1 批 | 主 Claude 自己連續 5-6 次 WebSearch（不用 Task tool）|
+| 寫檔 | 每完成 1 個項目就 Edit 寫到 `./$TRIP/research/agent-A.md`（**逐項 flush，不要等整批做完**）|
+| 第 1 批完 | dispatch-plan.md status: running → completed，講進度（「**5/38 項完成**，下一批 A6-A10**）|
+| 第 2 批 | 重複 |
+| 全部完 | gate / 主清單 / season 都做完，進收尾 |
+
+**核心紀律**：每批內也要逐項寫檔（不只是每批寫一次）— 防止主 Claude 中途撞 timeout，已寫的不會丟。
+
+### 4. 中斷續跑（Resume）
+
+session 掛掉重啟 → 讀 dispatch-plan.md 看哪批 status 不是 completed → 從那批接續。
+讀對應的 `agent-X.md` 看寫到哪一項 → 從下一項開始（不重做已寫的）。
+
+### 5. Pro mode 預算注意
+
+主 Claude 自己跑時，每次 WebSearch 結果都進主 context。**清單超過 30 項時主 context 會吃緊**：
+- 提示使用者：「研究項目較多（35 項），主 Claude 自己跑會吃緊。要改派 sub-agent 嗎？這趟可以暫時切到 Max mode（不影響你訂閱）。」
+- 改 mode 要記得寫回 trip-meta.md
 
 ### 為什麼兩個 mode 輸出格式要相容
 
@@ -263,37 +306,72 @@ Prompt 要求：
 
 派 agent 時，在每個 agent 的 prompt 裡標明「你負責清單中的 X1、X2、X3 三項，最後報告中按清單編號回答」，方便回收時對照。
 
-## 第三階段：研究 Agent 策略（動態決定數量）
+## 第三階段：研究 Agent 策略（事前算總數 → 算輪數 → 跑批 → 失敗拆細重派）
 
-**不要固定派 2 個或 5 個**。依研究清單實際項數 + 使用者特殊需求動態決定。
+> ⚠️ **重要**：「研究深度（標準/深度）」維度已拿掉。**所有研究都做深度研究**，差別只在 Mode（Pro = 主 Claude 自己跑 / Max = 派 sub-agent 平行）。詳見 Mode 選擇章節。
 
-### 1. 計算基準
+### 1. 算總 agent 數（事前規劃）
 
 從剛寫好的 `research-checklist.md` 算**有效項數**：
 - 跳過的整組類別不算（例如使用者已訂住宿 → D 整組省、已訂機票 → G 整組省）
 - 其餘實際列出的項目累計
 
-每個 agent 最佳工作量 ≈ **2-4 個清單項**（迷你 agent 策略 — 實測過 5-7 項會觸發 idle timeout）。
+每個 sub-agent 最佳工作量 ≈ **2-4 個清單項**（迷你 agent 策略 — 實測過 5-7 項會觸發 idle timeout）。
 
-**公式**：
+**估算公式（只是預估，會自我修正）**：
+
 ```
-agent_count = ceil(有效項數 / 3)              # 每個 agent 平均 3 項
-# 不再有上限，> 10 才分輪 response 派
+agent_count_estimate = ceil(有效項數 / 3)     # 每個 agent 平均 3 項
 ```
 
-範例：清單 38 項 → ceil(38/3) ≈ 13 個迷你 agent → 第一輪派 7 個 + 第二輪派 6 個。
-範例：清單 24 項 → ceil(24/3) = 8 個迷你 agent → 一次全派。
+範例：清單 38 項 → 估 13 個 agent。
 
-### 2. mode 影響的是「每個 agent 的搜尋預算」，不是 agent 總數
+### 2. 算輪數
 
-新策略下 agent 數由清單項數動態決定（公式見上一節），mode 只調整每個 agent 的搜尋寬度與深度：
+每輪派 **10-15 個** sub-agent（一輪 ≥ 16 會吃太多 main token、講進度也照顧不到）：
 
-| 使用者選的 | 每個迷你 agent 搜尋上限 | 每個項目細節 | 適用 |
-|---|---|---|---|
-| 標準（快速）| 5-6 次 WebSearch | 2-3 個推薦 + 基本資訊 | 想快點看到行程的使用者 |
-| 深度（徹底）| 8-10 次 WebSearch | 4-6 個推薦 + 完整地址 + IG 連結 + 比較 | 想看完整研究報告 |
+```
+rounds = ceil(agent_count / 12)               # 12 是 10-15 的中位
+```
 
-**舊版的「max_agents 上限」概念已廢除** — 因為迷你 agent 的成本不是 agent 數量，而是每個 agent 能跑多深。
+範例：13 個 agent → 1 輪派完（一次派 13 個）。
+範例：22 個 agent → 2 輪（11 + 11，或 15 + 7）。
+範例：40 個 agent → 3 輪（15 + 15 + 10）。
+
+### 3. 跑批次（事前確定的批次，**不是動態看夠不夠**）
+
+| 步驟 | 做什麼 |
+|---|---|
+| 派發前 | 寫 dispatch-plan.md（含每個 agent 的 ID / 負責項 / 所在輪 / status: pending）|
+| 第 1 輪 | 一次派 10-15 個 sub-agent（全部 `run_in_background: true`）|
+| 等回來 | 檢查每個 agent status：completed / failed / 沒寫到報告 |
+| 處理失敗 | 死掉的 agent **絕對要重派**（不能放掉它的工作）；**重派時拆細**（見下節）|
+| 第 2 輪 | 派下一批（含失敗拆細補的）|
+| 重複 | 直到所有規劃的 agent 都 completed（含拆細補的）|
+
+每輪之間務必講一句文字（為了 idle timer 重置 + 使用者看得到進度）。
+
+### 4. 失敗拆細重派（自我修正預估）
+
+死掉 = 訊號，告訴你「**他的工作量比你預估的大**」→ 重派要拆細：
+
+| 失敗情況 | 處理 |
+|---|---|
+| Agent 死掉、報告完全空 | 工作量低估嚴重 → 拆 **3 個 agent** 接他的工作 |
+| Agent 死掉但寫了一半（H2 部分有內容）| 看剩下的多少 → 拆 **2 個** 補（每個負責剩餘的一半）|
+| Agent 沒死但內容很淺（搜尋預算耗盡）| 不拆，**加派 1 個** 專攻同主題深挖 |
+
+→ 原本預估 38 個 → 實際跑完可能變 45-50 個（含補拆的）。**這個機制讓「總數估錯」自我修正**。
+
+### 5. 持久化到 dispatch-plan.md（防 session 掛掉）
+
+**所有狀態必須寫進 markdown，不能只活在對話 context**：
+- 每派一個 agent → 寫入新 row（status: pending → running）
+- 每個 agent 回來 → Edit 該 row 的 status（completed / failed / partial）
+- 失敗拆細 → 加新 row（標明拆自誰、所在輪次）
+- 每輪結束 → 更新「目前輪次」欄
+
+下次 session 重啟時，讀 dispatch-plan.md 就知道哪些 agent 沒跑完、從哪接續。詳見「**Resume 模式**」章節。
 
 ### 3. 使用者特殊需求 → 獨立 agent
 
@@ -307,16 +385,15 @@ agent_count = ceil(有效項數 / 3)              # 每個 agent 平均 3 項
 
 例（本次測試場景，釜山案）：使用者強調「女生要彩妝保養品 + 知名購物點」→ 獨立 R_shop agent 專攻購物 + 彩妝，負責清單 I1-I6 這類專題項，不擠進 R1 核心體驗。
 
-### 4. 派送節奏（搭配執行紀律 #1 — 單一 response 上限 10 個 agent）
+### 6. 序列依賴（gate agent 與主研究的關係）
 
-| 輪次 | 派什麼 | 原因 |
-|---|---|---|
-| 第一輪 | gate agent + 寫 research-checklist | gate 最優先（簽證決定後續做不做），清單要先寫才能分派 |
-| 第二輪 | 全部主迷你 agent（≤ 10 個一次派完）| 迷你 agent 範圍小、互不依賴，平行跑最有效率 |
-| 第三輪（只在 > 10 時）| 剩下的迷你 agent | 第二輪派 7 個就講一句、再派下 3-7 個 |
-| 最後輪 | R_season（當季特殊）| 可以跟主 agent 一起派，因為事件 / 季節資訊獨立於景點 / 美食 |
+gate agent（簽證 / 護照 / 保險）有**輕微序列依賴**：簽證決定要不要繼續做研究，所以 gate 比主研究 agent 早一點點派、但可以**平行跑**。
 
-每輪之間務必講一句文字（為了 idle timer 重置 + 使用者看得到進度）。
+| 階段 | 派什麼 |
+|---|---|
+| **派發前**（並行起跑階段內）| 派 gate agent 到背景（`run_in_background: true`）。**不等 gate 回**，繼續跟使用者收集優先主題、寫 research-checklist |
+| **第 1 輪派 sub-agent** | 規劃好的主迷你 agent（10-15 個一輪）+ 季節 agent（如有）|
+| **gate 結果** | gate 通常在第 1 輪期間就回來。若 🟢 → 主研究繼續；若 🔴 紅燈 → 中止主研究、用 AskUserQuestion 處理 |
 
 ### 5. 範例分派（清單 ~38 項、深度 mode、有特殊購物需求）— 釜山案實測
 
@@ -355,34 +432,49 @@ agent_count = ceil(有效項數 / 3)              # 每個 agent 平均 3 項
 # 派送計畫 — {目的地}
 
 > 建立時間：{YYYY-MM-DD HH:MM}
+> 最後更新：{YYYY-MM-DD HH:MM}（每次狀態變動更新）
+> Mode：multi-agent（從 trip-meta.md 讀）
 > 研究清單總項數：{N}
-> agent 總數：{M}（gate 1 + 主 agent {M-1}）
+> 預估 agent 總數：{M}（會因失敗拆細變動）
+> **預計輪次：{ceil(M / 12)} 輪 — 第 1 輪 {n1} 個 + 第 2 輪 {n2} 個 + ...**
+> **目前輪次：{R} / {total_rounds}+**
 
 ## 拆分原則
 - 每個迷你 agent 負責 2-4 個清單項
 - 每個 agent 搜尋上限 6-10 次
 - 嚴格逐項 flush（每寫完 1 項立即覆寫整檔）
+- 一輪 ≤ 15 個 agent（避免 main token 爆）
 
 ## Agent 清單
 
-| Agent ID | 負責清單項 | 主題摘要 | 搜尋預算 | 派送輪 | 狀態 | 報告檔 |
-|---|---|---|---|---|---|---|
-| gate | A0-1~A0-4 | 簽證 / 護照 / 保險 | 15 | 1 | pending | `agent-0-gate.md` |
-| R1a | A1, A2 | 釜山景點 + IG spot | 8 | 2 | pending | `agent-R1a.md` |
-| R1b | A3, A4, A5, A6 | 慶州大邱景點 + 夜生活 + 韓服 | 8 | 2 | pending | `agent-R1b.md` |
-| ... | ... | ... | ... | ... | ... | ... |
-
-## 預期完成時間
-{預估 5-10 分鐘}
-
-## 失敗回復策略
-若某個 agent timeout：
-1. 檢查報告檔是否有部分內容（H2 + 段落）
-2. 把失敗 agent 拆成更小範圍重派（每次 1-2 項）
-3. 三次都失敗 → 在報告裡標「⚠️ 此項無資料」並繼續
+| Agent ID | 負責清單項 | 主題摘要 | 搜尋預算 | 所在輪 | 狀態 | 報告檔 | 失敗原因 / 拆自 |
+|---|---|---|---|---|---|---|---|
+| gate | A0-1~A0-4 | 簽證 / 護照 / 保險 | 15 | 0 (背景) | pending | `agent-0-gate.md` | — |
+| R1a | A1, A2 | 釜山景點 + IG spot | 8 | 1 | pending | `agent-R1a.md` | — |
+| R1b | A3-A6 | 慶州大邱景點 | 8 | 1 | pending | `agent-R1b.md` | — |
+| R1b-1 | A3, A4 | 慶州景點 + 美食 | 6 | 2 | pending | `agent-R1b-1.md` | 拆自 R1b（timeout）|
+| R1b-2 | A5 | 韓服 | 4 | 2 | pending | `agent-R1b-2.md` | 拆自 R1b（timeout）|
+| R1b-3 | A6 | 夜生活 | 4 | 2 | pending | `agent-R1b-3.md` | 拆自 R1b（timeout）|
+| ... | ... | ... | ... | ... | ... | ... | ... |
 ```
 
-每個 agent 回報後，**用 Edit 把對應列的「狀態」更新為 `completed` / `failed`** 並在主對話講一句進度，使用者隨時可以開 `dispatch-plan.md` 看完整進度。
+### 狀態值定義
+
+- `pending` — 已寫進清單，還沒派
+- `running` — 已派出去，等回報
+- `completed` — 回來了 + 報告完整（≥ 80% 有內容）
+- `partial` — 回來了但內容不足（50-79%）
+- `failed` — 撞 timeout / 報告完全空 / < 50%
+- `superseded` — 被拆細補派取代（之後不再看 — 用拆細的 row）
+
+### 何時更新（**每個狀態變動都要 Edit 寫回**）
+
+- 每派一個 agent → status: pending → running
+- 每個 agent 回來 → 改 status（completed / partial / failed）+ 在主對話講一句
+- 失敗 → 加新 row（拆細補派 row 標明「拆自誰」）+ 把舊 row status 改 failed 或 superseded
+- 每輪結束 → 更新「目前輪次」+ 「最後更新」時間
+
+**為什麼每次都要寫**：防止 session 異常掛掉。下次 Claude 重啟讀 dispatch-plan.md 就能 resume，不用全重跑。
 
 ## 第四階段：Agent Prompt 撰寫指引
 
@@ -523,15 +615,45 @@ done
 
 ## Resume 模式（重新執行 `/trip-research` 時）
 
-若偵測到 `./$TRIP/research/agent-*.md` 已有既存報告（表示使用者之前跑過），**skill 開頭第一件事**（在讀 trip-meta / profile 之前）就用 `AskUserQuestion` 問：
+**核心：讀 `./$TRIP/research/dispatch-plan.md` 看 agent 狀態，從中斷點接續**（這是 session 異常掛掉的救命機制）。
+
+### 偵測時機
+
+skill 開頭第一件事（在讀 trip-meta / profile 之前），檢查兩個條件：
+
+1. `./$TRIP/research/dispatch-plan.md` 存在 → **進 Resume 流程**
+2. `./$TRIP/research/agent-*.md` 已有報告（但無 dispatch-plan.md，舊版資料）→ 走原本的「補失敗 / 全部重跑」流程
+
+### Resume 流程（有 dispatch-plan.md）
+
+**讀 dispatch-plan.md，逐 row 看 status，**自動分流：
+
+| Status | 動作 |
+|---|---|
+| `pending` | 還沒派出去，**這輪重派**（對應 agent ID 的 prompt 重新組） |
+| `running` | 上次派了沒收到回報（session 中途斷）→ **檢查報告檔是否有內容** → 有就改 `partial`，沒就改 `pending` 重派 |
+| `completed` / `partial` | 不動，已有結果 |
+| `failed` 但下面沒有對應拆細 row | 加拆細 row、改 status 為 superseded |
+| `superseded` | 跳過（看拆細 row）|
+
+**用 `AskUserQuestion` 跟使用者確認**：
 
 | 選項 | 說明 |
 |---|---|
-| 只補失敗的（推薦，省 token）| 跑完成度掃描，只重派 < 80% 的 agent。現有完整報告不動 |
-| 全部重跑 | `rm -f ./$TRIP/research/agent-*.md ./$TRIP/research/research-checklist.md`，然後跑完整 skill 流程 |
+| 從中斷點接續（推薦）| 自動把 pending / running 重派、failed 拆細補派；現有 completed 不動 |
+| 全部重跑 | `rm -f ./$TRIP/research/agent-*.md dispatch-plan.md research-checklist.md`，跑完整 skill 流程 |
 | 取消 | 什麼都不做，退出 |
 
-選「只補失敗的」時，跳過第一階段（不重問國籍 / 護照 / 優先主題，因為畫像已有），直接從「掃完成度 → 重派失敗 agent」開始。
+選「從中斷點接續」時，**跳過第一階段**（不重問國籍 / 護照 / 優先主題，因為畫像已有 + checklist 已寫）。直接從「**讀 dispatch-plan.md → 重派該重派的 → 跑剩下的輪次**」開始。
+
+### 為什麼 dispatch-plan.md 是救命關鍵
+
+session 異常掛掉時：
+- 對話 context 全失（Claude 不記得跑到哪）
+- 但 dispatch-plan.md 在 disk 上，**每個 agent 狀態都有寫**
+- 重啟新 session 讀檔就還原全部進度
+
+**核心紀律：所有 agent 狀態變動都必須 Edit 寫進 dispatch-plan.md**（不能只活在對話 context 裡）。
 
 ## 報告儲存
 
