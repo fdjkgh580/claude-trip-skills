@@ -24,34 +24,114 @@ user-invocable: true
 
 **重要**：以下所有 `research/...` 路徑都是指 `./$TRIP/research/...`，別寫到根目錄。
 
-## 執行紀律（App 環境必讀，避免 timeout + 讓進度可見）
+## 執行紀律（先讀根目錄 CLAUDE.md「派 sub-agent 通則」+「環境感知」章節）
 
-使用者（尤其手機 / web app）**看不到 tool call 細節**，只看得到你輸出的文字。若長時間沒文字輸出會撞 5 分鐘 stream idle timeout，使用者以為 Claude 當機。**實測過這件事真的會發生**（見原專案 test-findings #6/#7）。詳見根目錄 CLAUDE.md「環境感知」章節。
+**本 skill 的派 agent 規則繼承自根目錄 `CLAUDE.md` §派 sub-agent 通則 + §環境感知**，不重複。以下只列 trip-research 特有的硬規則：
 
-### 硬規則 — 不得違反
+### 硬規則 — 不得違反（trip-research specific）
 
-1. **單一 assistant response 不得派 > 3 個 agent**
-   - 每個 agent prompt ~300-500 token，5 個一起生成長度疊加會超過 idle timeout
-   - 做法：**把 agent 派送拆成 2-3 輪 response**，每輪 2-3 個，中間講一句狀態
+1. **預設用「迷你 agent」策略：每個 agent 只負責 2-4 個清單項，可一次派 5-10 個**
+   - 實測（2026-04 釜山案）：原本 5-7 項 / agent 的設計，4/5 個 sub-agent 撞 idle timeout，只交付骨架。改成 2-3 項 / agent 後成功率 100%。
+   - **原因**：sub-agent 在主執行緒看不到 token 流動，但 sub-agent 自己內部仍然要避免「搜尋 → 思考 → 沒寫檔」之間靜默太久。任務範圍越小，搜尋次數越少（≤8 次），逐項寫檔的頻率自然越高，越不可能撞 5 分鐘 idle timeout。
+   - **新做法**：把原本 "R1 景點 + 文化 + 拍照 + 夜生活"（6-8 項）拆成 R1a（A1-A2，2 項）+ R1b（A3-A6，4 項）。R2 飲食拆成 R2a（B1+B2+B4）+ R2b（B3+B5）。R_shop 拆成 R_shop_a（I1+I3+I4）+ R_shop_b（I2+I5+I6）。
+   - **單一 response 派 agent 的硬上限 = 10 個**：迷你 agent 的 prompt 短（~150-250 token），10 個一起寫只 ~2000 token，遠低於 idle timeout 風險。**> 10 才需要分多輪 response**（例：14 個迷你 agent → 第一輪派 7 個 + 第二輪派 7 個，中間講一句狀態）。
+   - 做法：**該拆就拆**，不要為了符合舊規則硬擠成大 agent。任務小、搜尋少、逐項 flush 才是不撞 timeout 的真正關鍵。
 
-2. **每個 tool call 前輸出一句話進度**
-   - 派 agent 前：「派 R1 景點研究去背景，預計 5-8 分鐘」
-   - 寫檔前：「把研究清單寫到 research-checklist.md…」
-   - 作用：token 持續流動，重置 idle timer、使用者看得到正在做什麼
-
-3. **所有研究 agent 一律 `run_in_background: true`**
-   - 不要 blocking（主對話會被擋到 agent 跑完）
-   - agent 結束會自動通知、收通知再讀報告
-
-4. **用 TodoWrite 追蹤每個 agent**
-   - 派一個 agent = 建一個 todo（「R1 景點研究中」），agent 回報改 `completed`
-   - App UI 會顯示進度條，使用者心安
-
-5. **使用者問「進度如何 / 還在嗎」時要具體回答**
-   - 好：「R1 景點 3 分鐘前回來、R2 美食還在跑、R3 交通剛派」
+2. **使用者問「進度如何 / 還在嗎」時要具體回答**
+   - 好:「R1 景點 3 分鐘前回來、R2 美食還在跑、R3 交通剛派」
    - 壞：「還在跑，等一下」
 
-6. **agent 回報完一個就講一句**，不要等全部回來才開口
+## Mode 選擇（這趟旅行第一次跑 trip-research 時必做）
+
+不同 Claude 訂閱方案 token 預算差很多，**必須在派 agent 前確認使用者要走哪個 mode**。詳見根目錄 CLAUDE.md「派 sub-agent 通則」§B。
+
+### 流程
+
+1. **讀 `./$TRIP/trip-meta.md` 「Claude 模式」欄位**：
+   - 值為 `multi-agent` → 走 Multi-agent mode（派 sub-agent 平行）
+   - 值為 `no-agent` → 走 No-agent mode（主 Claude 自己跑）
+   - 值為 `尚未設定` 或欄位不存在 → 用 `AskUserQuestion` 問使用者，選完寫回 trip-meta.md
+
+2. **詢問範例**（用最白話、不要用「sub-agent / 配額 / token」這類術語）：
+
+   題目：「這趟旅行第一次研究資料。你 Claude 訂閱是哪個？」
+   選項（單選）：
+   - **Pro 版**：我自己慢慢跑（約 8-10 分鐘，比較省）
+   - **Max 版**：派幾個小幫手平行做（約 3 分鐘，比較快但會吃較多配額）
+   - **Other**（讓使用者自己打字 — 例如「我用 API」「我有別的訂閱」）
+
+   ⚠️ **不要加「不知道（我幫你猜）」這種選項** — 因為 Claude 沒辦法從別處得知訂閱，「猜」實際上只能預設 Pro，等於跟直接選 Pro 一樣，是冗餘選項。
+
+3. **寫回 trip-meta.md**：用 Edit 把「Claude 模式」欄位更新為 `no-agent` 或 `multi-agent`。
+
+### Multi-agent mode 流程
+
+走第一階段（並行起跑 + 派 gate agent）→ 第二階段（研究清單）→ 第三階段（迷你 agent 派發） → 第四階段（agent prompt）→ 第五階段（回收）。**這就是現有 SKILL.md 後面的完整流程**，不變。
+
+### No-agent mode 流程（主 Claude 自己跑、不用 Task tool）
+
+**核心理念**：把原本派給 sub-agent 的清單，主 Claude 在主執行緒**多輪迭代地做**。每完成一個清單區段就 Edit 寫到 `./$TRIP/research/agent-X.md`（**檔名 / 格式跟 multi-agent mode 完全一致**，方便 trip-go 後續讀）。
+
+> ⚠️ **關鍵紀律**：Pro mode 也要**多輪 + 持久化**！主 Claude 一口氣跑 30 次搜尋會撞 idle timeout、context 也會爆。**每批處理 5-6 項 → 寫檔 → 講進度 → 下一批**才是正解。
+
+### 1. 算總批數（事前規劃，類比 Multi-agent 的 agent 總數）
+
+從 `research-checklist.md` 算有效項數，每批 5-6 項：
+
+```
+batch_count = ceil(有效項數 / 5)              # 每批平均 5 項
+```
+
+範例：清單 38 項 → 估 8 批。
+
+### 2. 寫 dispatch-plan.md（持久化 — 跟 Multi-agent 用同一個檔）
+
+```markdown
+# 派送計畫 — {目的地}
+
+> Mode：no-agent（Pro，主 Claude 自己跑）
+> 預估批數：{batch_count}
+> 目前批次：{current_batch} / {batch_count}+
+
+## 批次清單
+
+| 批號 | 負責清單項 | 狀態 | 報告檔 |
+|---|---|---|---|
+| 1 | A1-A5 | pending | `agent-A.md` |
+| 2 | A6-A10 | pending | `agent-A.md` (續) |
+| 3 | B1-B5 | pending | `agent-B.md` |
+| ... | ... | ... | ... |
+```
+
+### 3. 跑批次
+
+| 步驟 | 做什麼 |
+|---|---|
+| 第 1 批前 | dispatch-plan.md 該批 status: pending → running，講「開始第 1 批」 |
+| 跑第 1 批 | 主 Claude 自己連續 5-6 次 WebSearch（不用 Task tool）|
+| 寫檔 | 每完成 1 個項目就 Edit 寫到 `./$TRIP/research/agent-A.md`（**逐項 flush，不要等整批做完**）|
+| 第 1 批完 | dispatch-plan.md status: running → completed，講進度（「**5/38 項完成**，下一批 A6-A10**）|
+| 第 2 批 | 重複 |
+| 全部完 | gate / 主清單 / season 都做完，進收尾 |
+
+**核心紀律**：每批內也要逐項寫檔（不只是每批寫一次）— 防止主 Claude 中途撞 timeout，已寫的不會丟。
+
+### 4. 中斷續跑（Resume）
+
+session 掛掉重啟 → 讀 dispatch-plan.md 看哪批 status 不是 completed → 從那批接續。
+讀對應的 `agent-X.md` 看寫到哪一項 → 從下一項開始（不重做已寫的）。
+
+### 5. Pro mode 預算注意
+
+主 Claude 自己跑時，每次 WebSearch 結果都進主 context。**清單超過 30 項時主 context 會吃緊**：
+- 提示使用者：「研究項目較多（35 項），主 Claude 自己跑會吃緊。要改派 sub-agent 嗎？這趟可以暫時切到 Max mode（不影響你訂閱）。」
+- 改 mode 要記得寫回 trip-meta.md
+
+### 為什麼兩個 mode 輸出格式要相容
+
+`/trip-go` 之後會讀 `./$TRIP/research/agent-*.md` 排行程，**它不關心是 sub-agent 寫的還是主 Claude 寫的**。只要檔名、H2 結構、Source citation 規則一樣，下游就無感。所以 No-agent mode 寫檔時 **必須照 multi-agent 的格式來**：每個負責項 1 個 H2、每段附 URL、用「⚠️」標分歧或缺資料。
+
+---
 
 ## 第一階段：並行起跑（讓使用者第一眼就進入旅遊話題）
 
@@ -226,30 +306,72 @@ Prompt 要求：
 
 派 agent 時，在每個 agent 的 prompt 裡標明「你負責清單中的 X1、X2、X3 三項，最後報告中按清單編號回答」，方便回收時對照。
 
-## 第三階段：研究 Agent 策略（動態決定數量）
+## 第三階段：研究 Agent 策略（事前算總數 → 算輪數 → 跑批 → 失敗拆細重派）
 
-**不要固定派 2 個或 5 個**。依研究清單實際項數 + 使用者特殊需求動態決定。
+> ⚠️ **重要**：「研究深度（標準/深度）」維度已拿掉。**所有研究都做深度研究**，差別只在 Mode（Pro = 主 Claude 自己跑 / Max = 派 sub-agent 平行）。詳見 Mode 選擇章節。
 
-### 1. 計算基準
+### 1. 算總 agent 數（事前規劃）
 
 從剛寫好的 `research-checklist.md` 算**有效項數**：
 - 跳過的整組類別不算（例如使用者已訂住宿 → D 整組省、已訂機票 → G 整組省）
 - 其餘實際列出的項目累計
 
-每個 agent 最佳工作量 ≈ **5-7 個清單項**（超過 10 項容易失敗或跑不完，低於 3 項浪費 token）。
+每個 sub-agent 最佳工作量 ≈ **2-4 個清單項**（迷你 agent 策略 — 實測過 5-7 項會觸發 idle timeout）。
 
-**公式**：
+**估算公式（只是預估，會自我修正）**：
+
 ```
-agent_count = max(ceil(有效項數 / 6), 2)      # 最少 2
-agent_count = min(agent_count, max_agents)     # 不超過上限
+agent_count_estimate = ceil(有效項數 / 3)     # 每個 agent 平均 3 項
 ```
 
-### 2. max_agents 依 /trip-plan 選的 mode 決定
+範例：清單 38 項 → 估 13 個 agent。
 
-| 使用者選的 | max_agents | 適用 |
-|---|---|---|
-| 標準（快速）| 3 | 省資源，清單大時某些項目會擠進同一個 agent 緊湊跑 |
-| 深度（徹底）| 5（清單 ≤ 30 項）/ 6（> 30 項）| 徹底查，agent 負擔均勻 |
+### 2. 算輪數
+
+每輪派 **10-15 個** sub-agent（一輪 ≥ 16 會吃太多 main token、講進度也照顧不到）：
+
+```
+rounds = ceil(agent_count / 12)               # 12 是 10-15 的中位
+```
+
+範例：13 個 agent → 1 輪派完（一次派 13 個）。
+範例：22 個 agent → 2 輪（11 + 11，或 15 + 7）。
+範例：40 個 agent → 3 輪（15 + 15 + 10）。
+
+### 3. 跑批次（事前確定的批次，**不是動態看夠不夠**）
+
+| 步驟 | 做什麼 |
+|---|---|
+| 派發前 | 寫 dispatch-plan.md（含每個 agent 的 ID / 負責項 / 所在輪 / status: pending）|
+| 第 1 輪 | 一次派 10-15 個 sub-agent（全部 `run_in_background: true`）|
+| 等回來 | 檢查每個 agent status：completed / failed / 沒寫到報告 |
+| 處理失敗 | 死掉的 agent **絕對要重派**（不能放掉它的工作）；**重派時拆細**（見下節）|
+| 第 2 輪 | 派下一批（含失敗拆細補的）|
+| 重複 | 直到所有規劃的 agent 都 completed（含拆細補的）|
+
+每輪之間務必講一句文字（為了 idle timer 重置 + 使用者看得到進度）。
+
+### 4. 失敗拆細重派（自我修正預估）
+
+死掉 = 訊號，告訴你「**他的工作量比你預估的大**」→ 重派要拆細：
+
+| 失敗情況 | 處理 |
+|---|---|
+| Agent 死掉、報告完全空 | 工作量低估嚴重 → 拆 **3 個 agent** 接他的工作 |
+| Agent 死掉但寫了一半（H2 部分有內容）| 看剩下的多少 → 拆 **2 個** 補（每個負責剩餘的一半）|
+| Agent 沒死但內容很淺（搜尋預算耗盡）| 不拆，**加派 1 個** 專攻同主題深挖 |
+
+→ 原本預估 38 個 → 實際跑完可能變 45-50 個（含補拆的）。**這個機制讓「總數估錯」自我修正**。
+
+### 5. 持久化到 dispatch-plan.md（防 session 掛掉）
+
+**所有狀態必須寫進 markdown，不能只活在對話 context**：
+- 每派一個 agent → 寫入新 row（status: pending → running）
+- 每個 agent 回來 → Edit 該 row 的 status（completed / failed / partial）
+- 失敗拆細 → 加新 row（標明拆自誰、所在輪次）
+- 每輪結束 → 更新「目前輪次」欄
+
+下次 session 重啟時，讀 dispatch-plan.md 就知道哪些 agent 沒跑完、從哪接續。詳見「**Resume 模式**」章節。
 
 ### 3. 使用者特殊需求 → 獨立 agent
 
@@ -263,32 +385,96 @@ agent_count = min(agent_count, max_agents)     # 不超過上限
 
 例（本次測試場景，釜山案）：使用者強調「女生要彩妝保養品 + 知名購物點」→ 獨立 R_shop agent 專攻購物 + 彩妝，負責清單 I1-I6 這類專題項，不擠進 R1 核心體驗。
 
-### 4. 派送節奏（搭配執行紀律 #1 — 單一 response ≤ 3 個 agent）
+### 6. 序列依賴（gate agent 與主研究的關係）
 
-不論算出幾個 agent，照這個節奏派：
+gate agent（簽證 / 護照 / 保險）有**輕微序列依賴**：簽證決定要不要繼續做研究，所以 gate 比主研究 agent 早一點點派、但可以**平行跑**。
 
-| 輪次 | 派什麼 | 原因 |
-|---|---|---|
-| 第一輪 | gate agent + 寫 research-checklist | gate 最優先（簽證決定後續做不做），清單要先寫才能分派 |
-| 第二輪 | 前 2-3 個主 agent | 優先派「核心興趣對應」和「飲食」 |
-| 第三輪 | 剩餘主 agent | 交通 / 安全 / 住宿 / 特殊需求 |
-| 最後輪 | R_season（當季特殊，後置）| 前面都回來才派，因為要跨 agent 整合 |
+| 階段 | 派什麼 |
+|---|---|
+| **派發前**（並行起跑階段內）| 派 gate agent 到背景（`run_in_background: true`）。**不等 gate 回**，繼續跟使用者收集優先主題、寫 research-checklist |
+| **第 1 輪派 sub-agent** | 規劃好的主迷你 agent（10-15 個一輪）+ 季節 agent（如有）|
+| **gate 結果** | gate 通常在第 1 輪期間就回來。若 🟢 → 主研究繼續；若 🔴 紅燈 → 中止主研究、用 AskUserQuestion 處理 |
 
-每輪之間務必講一句文字。
+### 5. 範例分派（清單 ~38 項、深度 mode、有特殊購物需求）— 釜山案實測
 
-### 5. 範例分派（清單 ~28 項、深度 mode、有特殊購物需求）
+| Agent | 負責清單項 | 搜尋預算 | 派送輪 |
+|---|---|---|---|
+| gate | A0-1~A0-4 簽證 / 護照 / 保險 | 15 | 第 1 輪（背景）|
+| R1a | A1 釜山景點 + A2 IG spot | 8 | 第 2 輪 |
+| R1b | A3 慶州 + A4 大邱景點 + A5 夜生活 + A6 韓服 | 8 | 第 2 輪 |
+| R2a | B1 預算 + B2 釜山必吃 + B4 飲水 | 8 | 第 2 輪 |
+| R2b | B3 慶州大邱必吃 + B5 IG 咖啡 | 6 | 第 2 輪 |
+| R3a | C1 機場接駁 + C2 市內交通 + C3 票券 | 7 | 第 2 輪 |
+| R3b | C4 城際 KTX + G1 航班 + G2 訂票 | 7 | 第 2 輪 |
+| R4 | D1-D4 住宿 + E1-E7 安全 + H1-H5 保險 | 25 | 第 2 輪 |
+| R_shop_a | I1 購物熱點 + I3 藥妝店 + I4 退稅 | 8 | 第 2 輪 |
+| R_shop_b | I2 必買清單 + I5 大邱購物 + I6 IG 選物店 | 8 | 第 2 輪 |
+| R_season | F1-F4 9 月初當季特殊 | 6 | 第 2 輪（同步派）|
 
-| Agent | 負責清單項 | 派送輪 |
-|---|---|---|
-| gate | A0 簽證 / 護照 / 保險政策 | 第 1 輪（背景）|
-| R1 | A 景點 + 文化 + 拍照 + 夜生活 | 第 2 輪 |
-| R2 | B 飲食 | 第 2 輪 |
-| R3 | C 交通 + G 機票（若需）| 第 3 輪 |
-| R4 | E 安全 + H 保險細節 | 第 3 輪 |
-| R_shop | 使用者特殊需求：購物 + 彩妝（獨立） | 第 3 輪 |
-| R_season | F 當季特殊（跨 agent 整合）| 最後輪（等 R1-R_shop 回來）|
+共 11 個 agent，gate 1 個第 1 輪、其餘 10 個第 2 輪一次派完。實測成功率 100%（早期版本拆成 5 個大 agent 時失敗率 80%）。
 
-若使用者走住宿自理 → R5 不派；若已訂機票 → R3 只做交通。
+若使用者走住宿自理 → R4 縮成只做安全 + 保險；若已訂機票 → R3b 只做城際。
+
+### 6. 派送總表（Dispatch Plan）— 派 agent 前必須先列給使用者看
+
+**為什麼必要**：使用者（尤其手機 / 桌電 App）看不到 sub-agent 內部活動，只能靠主執行緒輸出的文字判斷進度。**先有一份「總表」**讓他們知道：「我請了 11 個小幫手，分別在做這 11 件事」，後續每個 agent 回報時對得上號，焦慮會大幅降低。同時這份總表也是後續 resume / 補派 / 完成度檢查的單一真實來源。
+
+#### 流程
+
+1. 寫完 `research-checklist.md` 後，**立即依上一節策略決定 agent 拆法**（誰負責哪幾項、搜尋預算多少）
+2. 把 agent 拆法**寫進 `./$TRIP/research/dispatch-plan.md`**（格式如下）
+3. 在主對話**用表格輸出給使用者看**，並告知「我馬上開始派，每個 agent 回來會立刻講」
+4. 同步用 `TodoWrite` 為每個 agent 建一個 todo（status=pending），這樣 App UI 也看得到進度
+
+#### `dispatch-plan.md` 格式
+
+```markdown
+# 派送計畫 — {目的地}
+
+> 建立時間：{YYYY-MM-DD HH:MM}
+> 最後更新：{YYYY-MM-DD HH:MM}（每次狀態變動更新）
+> Mode：multi-agent（從 trip-meta.md 讀）
+> 研究清單總項數：{N}
+> 預估 agent 總數：{M}（會因失敗拆細變動）
+> **預計輪次：{ceil(M / 12)} 輪 — 第 1 輪 {n1} 個 + 第 2 輪 {n2} 個 + ...**
+> **目前輪次：{R} / {total_rounds}+**
+
+## 拆分原則
+- 每個迷你 agent 負責 2-4 個清單項
+- 每個 agent 搜尋上限 6-10 次
+- 嚴格逐項 flush（每寫完 1 項立即覆寫整檔）
+- 一輪 ≤ 15 個 agent（避免 main token 爆）
+
+## Agent 清單
+
+| Agent ID | 負責清單項 | 主題摘要 | 搜尋預算 | 所在輪 | 狀態 | 報告檔 | 失敗原因 / 拆自 |
+|---|---|---|---|---|---|---|---|
+| gate | A0-1~A0-4 | 簽證 / 護照 / 保險 | 15 | 0 (背景) | pending | `agent-0-gate.md` | — |
+| R1a | A1, A2 | 釜山景點 + IG spot | 8 | 1 | pending | `agent-R1a.md` | — |
+| R1b | A3-A6 | 慶州大邱景點 | 8 | 1 | pending | `agent-R1b.md` | — |
+| R1b-1 | A3, A4 | 慶州景點 + 美食 | 6 | 2 | pending | `agent-R1b-1.md` | 拆自 R1b（timeout）|
+| R1b-2 | A5 | 韓服 | 4 | 2 | pending | `agent-R1b-2.md` | 拆自 R1b（timeout）|
+| R1b-3 | A6 | 夜生活 | 4 | 2 | pending | `agent-R1b-3.md` | 拆自 R1b（timeout）|
+| ... | ... | ... | ... | ... | ... | ... | ... |
+```
+
+### 狀態值定義
+
+- `pending` — 已寫進清單，還沒派
+- `running` — 已派出去，等回報
+- `completed` — 回來了 + 報告完整（≥ 80% 有內容）
+- `partial` — 回來了但內容不足（50-79%）
+- `failed` — 撞 timeout / 報告完全空 / < 50%
+- `superseded` — 被拆細補派取代（之後不再看 — 用拆細的 row）
+
+### 何時更新（**每個狀態變動都要 Edit 寫回**）
+
+- 每派一個 agent → status: pending → running
+- 每個 agent 回來 → 改 status（completed / partial / failed）+ 在主對話講一句
+- 失敗 → 加新 row（拆細補派 row 標明「拆自誰」）+ 把舊 row status 改 failed 或 superseded
+- 每輪結束 → 更新「目前輪次」+ 「最後更新」時間
+
+**為什麼每次都要寫**：防止 session 異常掛掉。下次 Claude 重啟讀 dispatch-plan.md 就能 resume，不用全重跑。
 
 ## 第四階段：Agent Prompt 撰寫指引
 
@@ -316,14 +502,21 @@ agent_count = min(agent_count, max_agents)     # 不超過上限
    每個 H2 下面先放 `TODO: 待補` 占位符。
    在寫出骨架前，禁止任何 WebSearch / WebFetch / 其他工具呼叫。
 
-2. 每完成 2-3 個區段，必須用 Write 覆寫整個報告檔（flush 進度）。
-   不要等所有區段都做完才寫檔 — 這樣一旦逾時，前面的工作會全部消失。
+2. **每完成 1 個區段（甚至每加 1 個推薦項目）必須用 Write 覆寫整個報告檔（flush 進度）。**
+   不是「2-3 個」是「1 個就 flush」。實測過：等 2-3 個區段才 flush 會撞 5 分鐘 idle timeout，
+   前面的工作會全部消失。寧可多寫幾次 Write（成本很低）也不要等。
 
-3. 搜尋上限：
-   - 體驗類（IG / TikTok / 小紅書 / Reddit）：每個推薦項目最多嘗試 2 個社群平台。
-     第 2 個還抓不到就在該項標「⚠️ 無社群驗證」並前進，不要再試第 3 個平台。
-   - 整份報告總搜尋次數上限 30。超過上限剩下的項目標「⚠️ 因搜尋預算耗盡未深查，僅列基本資訊」並收尾。
-   - 寧可寫出「不完美但完整」的報告，也不要追求完美而逾時。
+3. 搜尋上限（**這是迷你 agent，總預算很緊**）：
+   - **整份報告總 WebSearch 次數上限 6-10 次**（看主 Claude 在派你時給的數字）
+   - **社群（IG / TikTok / 小紅書）很重要要查，但用對姿勢**：
+     - 首選：Google 搜「{關鍵字} site:instagram.com」「{關鍵字} 小紅書」這類間接搜尋
+     - 次選：搜「{地點} ptt 2025」「{地點} blog 推薦」找第三方攻略整理文（已經吸收社群口碑）
+     - **直接 WebFetch IG / TikTok 個別貼文連 2 次失敗就停手**，改走前兩個姿勢，不要 loop
+     - 不論抓不抓得到，**報告必附社群搜尋連結**（IG / TikTok / 小紅書）讓使用者自驗
+   - 多用「合併搜尋」：一次搜「釜山 必訪景點 ptt 2025」就拿到 8-10 個景點，
+     不要每個景點各搜一次（10 個景點 = 10 次搜，預算就爆了）
+   - 超過上限剩下的項目標「⚠️ 因搜尋預算耗盡未深查」並收尾
+   - 寧可寫出「不完美但完整」的報告，也不要追求完美而逾時
 
 4. 完成的定義：每個負責的清單項都必須有內容（即使是「⚠️ 無可靠資料」），
    不能留 TODO。最後一個工具呼叫應該是 Write 收尾版。
@@ -339,15 +532,21 @@ agent_count = min(agent_count, max_agents)     # 不超過上限
 
 11. **資訊來源優先順序（依清單類別分流）**：
 
-   **體驗類**（A 核心體驗、B2 必吃食物、F1-F3 節日市集、夜生活、拍照 spot、hidden gems、咖啡 / bar / 當紅店）— 使用者真正要的是「此刻在地人 / 旅人推什麼」，傳統旅遊媒體（Lonely Planet / TripAdvisor）往往過時或太主流：
-   - 優先序：**Instagram > TikTok > YouTube vlog > Reddit > Google Maps reviews**
-   - 目的地為日韓 / 東南亞時，**小紅書 升到第 3**
-   - 使用者國籍為中港台時，**小紅書 升到第 2**
-   - Claude 的 agent 無法登入社群、會被 IG / TikTok 擋牆阻擋。**實務做法**：
-     - 用 Google 搜「{地點} instagram 2025」「{地點} tiktok」「{城市} reddit hidden gems」，命中第三方整理文章當間接社群信號
-     - 可訪問的公開 hashtag / location 頁面直接抓
-     - 抓不到社群信號的項目，標「⚠️ 無社群驗證，僅官方媒體資料」
-   - **報告中必須附社群搜尋連結**（即使 agent 抓不到內容）：例如每家推薦餐廳附 IG 搜尋 URL `https://www.instagram.com/explore/search/keyword/?q={餐廳名}`、TikTok `https://www.tiktok.com/search?q={餐廳名}`，讓使用者自己點開驗證當紅程度
+   **體驗類**（A 核心體驗、B2 必吃食物、F1-F3 節日市集、夜生活、拍照 spot、hidden gems、咖啡 / bar / 當紅店）— 使用者真正要的是「此刻在地人 / 旅人推什麼」。**Instagram / TikTok / 小紅書是潮流訊號的命脈，必須優先使用**，傳統旅遊媒體（Lonely Planet / TripAdvisor）往往過時或太主流。
+
+   **優先序**：
+   - **Instagram > TikTok > 小紅書 > YouTube vlog > Reddit > Google Maps reviews**
+   - 目的地為日韓 / 東南亞時，**小紅書 升到第 2**
+   - 使用者國籍為中港台時，**小紅書 升到第 1-2**
+
+   **如何用社群（戰術重點）— 2026-04 釜山案實測歸納**：
+
+   - ✅ **首選：用 Google 搜「{關鍵字} site:instagram.com」「{關鍵字} 小紅書」「{關鍵字} reddit」**。Google 索引到的公開貼文 / 標籤頁 / 第三方整理文章，多半可以讀到摘要、點讚數、推薦理由
+   - ✅ **次選：搜「{地點} ptt 2025」「{地點} blog 推薦」「{地點} 小紅書 攻略」**，這類部落格 / 攻略文常常**已經彙整好 IG / 小紅書熱門推薦**，等於間接吸收社群口碑
+   - ✅ **報告中一律附「社群搜尋連結」讓使用者自驗**（IG: `https://www.instagram.com/explore/search/keyword/?q={店名}`、TikTok: `https://www.tiktok.com/search?q={店名}`、小紅書: `https://www.xiaohongshu.com/search_result?keyword={店名}`）— 因為實時人氣每月在變，使用者點開看當下狀態最準
+   - ⚠️ **要小心**：直接 WebFetch IG / TikTok 個別貼文 URL 經常會回登入牆或 404。**遇到 2 次抓失敗就停手**，改用上面的 Google 搜尋姿勢，不要在同一個項目重複硬抓（會吃光搜尋預算）
+   - ⚠️ **小紅書相對友善**：很多公開頁面 WebFetch 抓得到，可優先嘗試，但若主題沒有中文使用者熱度（例如歐美小眾景點），命中率仍低
+   - 抓不到任何社群信號的項目就標「⚠️ 無社群驗證，請點搜尋連結自驗」並前進，不要 loop
 
    **行政類**（A0 簽證、C 交通、D 住宿政策、E1-E5 安全 / 電壓、G 機票規則、H 保險）— 錯了會出事：
    - 優先序：**官方政府 / 公司網站 > 權威媒體（Lonely Planet、BBC Travel、官方觀光局）> 其他**
@@ -416,15 +615,45 @@ done
 
 ## Resume 模式（重新執行 `/trip-research` 時）
 
-若偵測到 `./$TRIP/research/agent-*.md` 已有既存報告（表示使用者之前跑過），**skill 開頭第一件事**（在讀 trip-meta / profile 之前）就用 `AskUserQuestion` 問：
+**核心：讀 `./$TRIP/research/dispatch-plan.md` 看 agent 狀態，從中斷點接續**（這是 session 異常掛掉的救命機制）。
+
+### 偵測時機
+
+skill 開頭第一件事（在讀 trip-meta / profile 之前），檢查兩個條件：
+
+1. `./$TRIP/research/dispatch-plan.md` 存在 → **進 Resume 流程**
+2. `./$TRIP/research/agent-*.md` 已有報告（但無 dispatch-plan.md，舊版資料）→ 走原本的「補失敗 / 全部重跑」流程
+
+### Resume 流程（有 dispatch-plan.md）
+
+**讀 dispatch-plan.md，逐 row 看 status，**自動分流：
+
+| Status | 動作 |
+|---|---|
+| `pending` | 還沒派出去，**這輪重派**（對應 agent ID 的 prompt 重新組） |
+| `running` | 上次派了沒收到回報（session 中途斷）→ **檢查報告檔是否有內容** → 有就改 `partial`，沒就改 `pending` 重派 |
+| `completed` / `partial` | 不動，已有結果 |
+| `failed` 但下面沒有對應拆細 row | 加拆細 row、改 status 為 superseded |
+| `superseded` | 跳過（看拆細 row）|
+
+**用 `AskUserQuestion` 跟使用者確認**：
 
 | 選項 | 說明 |
 |---|---|
-| 只補失敗的（推薦，省 token）| 跑完成度掃描，只重派 < 80% 的 agent。現有完整報告不動 |
-| 全部重跑 | `rm -f ./$TRIP/research/agent-*.md ./$TRIP/research/research-checklist.md`，然後跑完整 skill 流程 |
+| 從中斷點接續（推薦）| 自動把 pending / running 重派、failed 拆細補派；現有 completed 不動 |
+| 全部重跑 | `rm -f ./$TRIP/research/agent-*.md dispatch-plan.md research-checklist.md`，跑完整 skill 流程 |
 | 取消 | 什麼都不做，退出 |
 
-選「只補失敗的」時，跳過第一階段（不重問國籍 / 護照 / 優先主題，因為畫像已有），直接從「掃完成度 → 重派失敗 agent」開始。
+選「從中斷點接續」時，**跳過第一階段**（不重問國籍 / 護照 / 優先主題，因為畫像已有 + checklist 已寫）。直接從「**讀 dispatch-plan.md → 重派該重派的 → 跑剩下的輪次**」開始。
+
+### 為什麼 dispatch-plan.md 是救命關鍵
+
+session 異常掛掉時：
+- 對話 context 全失（Claude 不記得跑到哪）
+- 但 dispatch-plan.md 在 disk 上，**每個 agent 狀態都有寫**
+- 重啟新 session 讀檔就還原全部進度
+
+**核心紀律：所有 agent 狀態變動都必須 Edit 寫進 dispatch-plan.md**（不能只活在對話 context 裡）。
 
 ## 報告儲存
 
